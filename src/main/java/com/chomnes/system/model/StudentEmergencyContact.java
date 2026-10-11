@@ -1,5 +1,6 @@
 package com.chomnes.system.model;
 
+import org.hibernate.annotations.Nationalized;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -20,15 +21,19 @@ public class StudentEmergencyContact {
     private Integer studentId;
 
     @Column(name = "contact_name", nullable = false, length = 100)
+    @Nationalized
     private String contactName;
 
     @Column(name = "relationship", length = 50)
+    @Nationalized
     private String relationship;
 
     @Column(name = "phone_number", nullable = false, length = 20)
+    @Nationalized
     private String phoneNumber;
 
     @Column(name = "email", length = 100)
+    @Nationalized
     private String email;
 
     protected StudentEmergencyContact() {

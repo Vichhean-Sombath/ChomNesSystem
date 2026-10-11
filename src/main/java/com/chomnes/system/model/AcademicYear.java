@@ -1,5 +1,6 @@
 package com.chomnes.system.model;
 
+import org.hibernate.annotations.Nationalized;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -18,6 +19,7 @@ public class AcademicYear {
     private Integer academicYearId;
 
     @Column(name = "year_name", nullable = false, length = 20)
+    @Nationalized
     private String yearName;
 
     @Column(name = "start_date", nullable = false)
@@ -27,6 +29,7 @@ public class AcademicYear {
     private LocalDate endDate;
 
     @Column(name = "status", nullable = false, length = 10)
+    @Nationalized
     private String status = "Active";
 
     protected AcademicYear() {

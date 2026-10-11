@@ -1,5 +1,6 @@
 package com.chomnes.system.model;
 
+import org.hibernate.annotations.Nationalized;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -25,6 +26,7 @@ public class FeeStructure {
     private Integer semesterId;
 
     @Column(name = "fee_name", nullable = false, length = 100)
+    @Nationalized
     private String feeName;
 
     @Column(name = "amount", nullable = false, precision = 10, scale = 2)

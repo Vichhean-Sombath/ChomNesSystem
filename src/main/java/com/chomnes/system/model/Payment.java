@@ -1,5 +1,6 @@
 package com.chomnes.system.model;
 
+import org.hibernate.annotations.Nationalized;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -28,18 +29,22 @@ public class Payment {
     private BigDecimal amount;
 
     @Column(name = "payment_method", nullable = false, length = 20)
+    @Nationalized
     private String paymentMethod;
 
     @Column(name = "receipt_url", length = 255)
+    @Nationalized
     private String receiptUrl;
 
     @Column(name = "transaction_reference", length = 255)
+    @Nationalized
     private String transactionReference;
 
     @Column(name = "recorded_by", nullable = false)
     private Integer recordedBy;
 
     @Column(name = "notes", length = 255)
+    @Nationalized
     private String notes;
 
     protected Payment() {

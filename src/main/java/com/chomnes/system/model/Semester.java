@@ -1,5 +1,6 @@
 package com.chomnes.system.model;
 
+import org.hibernate.annotations.Nationalized;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -21,6 +22,7 @@ public class Semester {
     private Integer academicYearId;
 
     @Column(name = "semester_name", nullable = false, length = 30)
+    @Nationalized
     private String semesterName;
 
     @Column(name = "start_date", nullable = false)

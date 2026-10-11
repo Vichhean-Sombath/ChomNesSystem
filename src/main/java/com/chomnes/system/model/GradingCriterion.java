@@ -1,5 +1,6 @@
 package com.chomnes.system.model;
 
+import org.hibernate.annotations.Nationalized;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -24,6 +25,7 @@ public class GradingCriterion {
     private Integer classId;
 
     @Column(name = "component_name", nullable = false, length = 50)
+    @Nationalized
     private String componentName;
 
     @Column(name = "weight_percentage", nullable = false, precision = 5, scale = 2)

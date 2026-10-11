@@ -1,5 +1,6 @@
 package com.chomnes.system.model;
 
+import org.hibernate.annotations.Nationalized;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -17,6 +18,7 @@ public class SchoolClass {
     private Integer classId;
 
     @Column(name = "class_name", nullable = false, length = 50)
+    @Nationalized
     private String className;
 
     @Column(name = "academic_year_id", nullable = false)
@@ -26,6 +28,7 @@ public class SchoolClass {
     private Integer semesterId;
 
     @Column(name = "room_number", length = 20)
+    @Nationalized
     private String roomNumber;
 
     @Column(name = "max_capacity")

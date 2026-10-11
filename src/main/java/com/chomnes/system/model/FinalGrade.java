@@ -1,5 +1,6 @@
 package com.chomnes.system.model;
 
+import org.hibernate.annotations.Nationalized;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -34,6 +35,7 @@ public class FinalGrade {
     private BigDecimal finalScore;
 
     @Column(name = "letter_grade", length = 2)
+    @Nationalized
     private String letterGrade;
 
     @Column(name = "gpa_points", precision = 3, scale = 2)

@@ -1,5 +1,6 @@
 package com.chomnes.system.model;
 
+import org.hibernate.annotations.Nationalized;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -27,6 +28,7 @@ public class ClassEnrollment {
     private LocalDate enrollmentDate;
 
     @Column(name = "status", nullable = false, length = 20)
+    @Nationalized
     private String status = "Active";
 
     protected ClassEnrollment() {

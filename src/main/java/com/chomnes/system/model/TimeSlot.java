@@ -1,5 +1,6 @@
 package com.chomnes.system.model;
 
+import org.hibernate.annotations.Nationalized;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -18,6 +19,7 @@ public class TimeSlot {
     private Integer timeSlotId;
 
     @Column(name = "day_of_week", nullable = false, length = 3)
+    @Nationalized
     private String dayOfWeek;
 
     @Column(name = "start_time", nullable = false)

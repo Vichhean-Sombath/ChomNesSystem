@@ -1,5 +1,6 @@
 package com.chomnes.system.model;
 
+import org.hibernate.annotations.Nationalized;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -29,6 +30,7 @@ public class Schedule {
     private Integer timeSlotId;
 
     @Column(name = "room_number", length = 20)
+    @Nationalized
     private String roomNumber;
 
     protected Schedule() {

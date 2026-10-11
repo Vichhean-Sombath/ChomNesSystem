@@ -1,5 +1,6 @@
 package com.chomnes.system.model;
 
+import org.hibernate.annotations.Nationalized;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -17,12 +18,15 @@ public class Subject {
     private Integer subjectId;
 
     @Column(name = "subject_code", nullable = false, length = 20)
+    @Nationalized
     private String subjectCode;
 
     @Column(name = "subject_name", nullable = false, length = 100)
+    @Nationalized
     private String subjectName;
 
-    @Column(name = "description", columnDefinition = "varchar(max)")
+    @Column(name = "description", columnDefinition = "nvarchar(max)")
+    @Nationalized
     private String description;
 
     @Column(name = "prerequisite_subject_id")

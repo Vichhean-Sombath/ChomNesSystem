@@ -1,5 +1,6 @@
 package com.chomnes.system.model;
 
+import org.hibernate.annotations.Nationalized;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -21,33 +22,41 @@ public class Teacher {
     private Integer userId;
 
     @Column(name = "first_name", nullable = false, length = 50)
+    @Nationalized
     private String firstName;
 
     @Column(name = "last_name", nullable = false, length = 50)
+    @Nationalized
     private String lastName;
 
     @Column(name = "dob")
     private LocalDate dob;
 
     @Column(name = "gender", length = 6)
+    @Nationalized
     private String gender;
 
     @Column(name = "photo_url", length = 255)
+    @Nationalized
     private String photoUrl;
 
     @Column(name = "contact_number", length = 20)
+    @Nationalized
     private String contactNumber;
 
     @Column(name = "specialization", length = 100)
+    @Nationalized
     private String specialization;
 
-    @Column(name = "bio", columnDefinition = "varchar(max)")
+    @Column(name = "bio", columnDefinition = "nvarchar(max)")
+    @Nationalized
     private String bio;
 
     @Column(name = "hire_date")
     private LocalDate hireDate;
 
     @Column(name = "status", nullable = false, length = 20)
+    @Nationalized
     private String status = "Active";
 
     protected Teacher() {

@@ -1,5 +1,6 @@
 package com.chomnes.system.model;
 
+import org.hibernate.annotations.Nationalized;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -25,6 +26,7 @@ public class Assessment {
     private Integer criteriaId;
 
     @Column(name = "assessment_name", nullable = false, length = 100)
+    @Nationalized
     private String assessmentName;
 
     @Column(name = "max_score", nullable = false, precision = 6, scale = 2)

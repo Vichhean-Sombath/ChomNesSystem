@@ -1,5 +1,6 @@
 package com.chomnes.system.model;
 
+import org.hibernate.annotations.Nationalized;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -24,15 +25,19 @@ public class LessonResource {
     private Integer teacherId;
 
     @Column(name = "title", nullable = false, length = 150)
+    @Nationalized
     private String title;
 
-    @Column(name = "description", columnDefinition = "varchar(max)")
+    @Column(name = "description", columnDefinition = "nvarchar(max)")
+    @Nationalized
     private String description;
 
     @Column(name = "resource_type", nullable = false, length = 20)
+    @Nationalized
     private String resourceType;
 
     @Column(name = "file_url", length = 255)
+    @Nationalized
     private String fileUrl;
 
     @Column(name = "upload_date", nullable = false)

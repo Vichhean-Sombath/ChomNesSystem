@@ -1,5 +1,6 @@
 package com.chomnes.system.model;
 
+import org.hibernate.annotations.Nationalized;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -22,6 +23,7 @@ public class BakongQrRequest {
     private Integer invoiceId;
 
     @Column(name = "md5", nullable = false, length = 64)
+    @Nationalized
     private String md5;
 
     @Column(name = "amount_khr", nullable = false, precision = 15, scale = 2)
@@ -31,6 +33,7 @@ public class BakongQrRequest {
     private BigDecimal amountUsd;
 
     @Column(name = "status", nullable = false, length = 10)
+    @Nationalized
     private String status = "Pending";
 
     @Column(name = "expires_at", nullable = false)

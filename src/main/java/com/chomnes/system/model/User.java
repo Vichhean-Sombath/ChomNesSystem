@@ -1,5 +1,6 @@
 package com.chomnes.system.model;
 
+import org.hibernate.annotations.Nationalized;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -23,19 +24,24 @@ public class User {
     private Integer userId;
 
     @Column(name = "username", nullable = false, unique = true, length = 50)
+    @Nationalized
     private String username;
 
     @Column(name = "email", nullable = false, unique = true, length = 100)
+    @Nationalized
     private String email;
 
     @Column(name = "password_hash", nullable = false, length = 255)
+    @Nationalized
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
+    @Nationalized
     @Column(name = "role", nullable = false, length = 20)
     private Role role;
 
     @Enumerated(EnumType.STRING)
+    @Nationalized
     @Column(name = "status", nullable = false, length = 20)
     private Status status = Status.Active;
 

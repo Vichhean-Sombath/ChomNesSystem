@@ -1,5 +1,6 @@
 package com.chomnes.system.model;
 
+import org.hibernate.annotations.Nationalized;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -21,15 +22,18 @@ public class Certificate {
     private Integer studentId;
 
     @Column(name = "certificate_type", nullable = false, length = 20)
+    @Nationalized
     private String certificateType;
 
     @Column(name = "template_used", length = 100)
+    @Nationalized
     private String templateUsed;
 
     @Column(name = "issue_date", nullable = false)
     private LocalDate issueDate;
 
     @Column(name = "generated_file_url", length = 255)
+    @Nationalized
     private String generatedFileUrl;
 
     @Column(name = "issued_by", nullable = false)

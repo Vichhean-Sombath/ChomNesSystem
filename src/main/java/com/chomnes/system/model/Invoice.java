@@ -1,5 +1,6 @@
 package com.chomnes.system.model;
 
+import org.hibernate.annotations.Nationalized;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -20,6 +21,7 @@ public class Invoice {
     private Integer invoiceId;
 
     @Column(name = "invoice_number", nullable = false, length = 30)
+    @Nationalized
     private String invoiceNumber;
 
     @Column(name = "student_id", nullable = false)
@@ -44,6 +46,7 @@ public class Invoice {
     private BigDecimal amountPaid = BigDecimal.ZERO;
 
     @Column(name = "status", nullable = false, length = 10)
+    @Nationalized
     private String status = "Unpaid";
 
     @Column(name = "created_at", nullable = false)
