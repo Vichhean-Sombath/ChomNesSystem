@@ -8,6 +8,7 @@ import com.chomnes.system.exception.UserNotFoundException;
 import com.chomnes.system.model.User;
 import com.chomnes.system.repository.UserRepository;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,8 +37,10 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public UserResponse findById(Integer userId) {
-        return UserResponse.from(getUser(userId));
+    public UserResponse findById(Integer userId, Integer requesterId, boolean administrator) {
+        User user = getUser(userId);
+        requireOwnerOrAdministrator(userId, requesterId, administrator);
+        return UserResponse.from(user);
     }
 
     public UserResponse create(CreateUserRequest request) {
@@ -54,12 +57,23 @@ public class UserService {
         return UserResponse.from(userRepository.save(user));
     }
 
-    public UserResponse update(Integer userId, UpdateUserRequest request) {
+    public UserResponse update(Integer userId, UpdateUserRequest request, Integer requesterId, boolean administrator) {
         if (request.isEmpty()) {
             throw new IllegalArgumentException("Provide at least one user field to update.");
         }
 
         User user = getUser(userId);
+        requireOwnerOrAdministrator(userId, requesterId, administrator);
+        if (!administrator && (request.role() != null || request.status() != null)) {
+            throw new AccessDeniedException("Only an administrator can change a user's role or status.");
+        }
+        if (requesterId.equals(userId) && (request.role() != null || request.status() != null)) {
+            throw new AccessDeniedException("You cannot change your own role or status.");
+        }
+        if (requesterId.equals(userId) && request.password() != null) {
+            throw new AccessDeniedException("Use the authenticated password-change endpoint.");
+        }
+
         String username = request.username() == null ? null : request.username().trim();
         String email = request.email() == null ? null : normalizeEmail(request.email());
 
@@ -71,6 +85,11 @@ public class UserService {
         }
         ensureUnique(username, email, userId);
 
+        if (request.status() == User.Status.Inactive
+                && (user.getRole() == User.Role.Admin || request.role() == User.Role.Admin)) {
+            throw new AccessDeniedException("An administrator account cannot be deactivated.");
+        }
+
         if (username != null) user.setUsername(username);
         if (email != null) user.setEmail(email);
         if (request.password() != null) user.setPasswordHash(hashPassword(request.password()));
@@ -80,10 +99,22 @@ public class UserService {
         return UserResponse.from(userRepository.save(user));
     }
 
-    public void deactivate(Integer userId) {
+    public void deactivate(Integer userId, Integer requesterId) {
         User user = getUser(userId);
+        if (requesterId.equals(userId)) {
+            throw new AccessDeniedException("You cannot deactivate your own account.");
+        }
+        if (user.getRole() == User.Role.Admin) {
+            throw new AccessDeniedException("An administrator account cannot be deactivated.");
+        }
         user.setStatus(User.Status.Inactive);
         userRepository.save(user);
+    }
+
+    private void requireOwnerOrAdministrator(Integer userId, Integer requesterId, boolean administrator) {
+        if (!administrator && !requesterId.equals(userId)) {
+            throw new AccessDeniedException("You can only access your own user account.");
+        }
     }
 
     private User getUser(Integer userId) {
