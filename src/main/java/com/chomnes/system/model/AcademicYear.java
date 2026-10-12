@@ -36,6 +36,12 @@ public class AcademicYear {
         // Required by JPA.
     }
 
+    public AcademicYear(String yearName, LocalDate startDate, LocalDate endDate) {
+        this.yearName = yearName;
+        this.startDate = startDate;
+        this.endDate = endDate;
+    }
+
     public Integer getAcademicYearId() {
         return academicYearId;
     }
