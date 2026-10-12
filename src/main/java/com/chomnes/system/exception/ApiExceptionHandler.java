@@ -25,16 +25,21 @@ public class ApiExceptionHandler {
                 .body(new ApiError(exception.getMessage(), List.of()));
     }
 
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ApiError> handleNotFound(UserNotFoundException exception) {
+    @ExceptionHandler({UserNotFoundException.class, StudentNotFoundException.class})
+    public ResponseEntity<ApiError> handleNotFound(RuntimeException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ApiError(exception.getMessage(), List.of()));
     }
 
-    @ExceptionHandler({AdminBootstrapCompleteException.class, DuplicateUserException.class, DataIntegrityViolationException.class})
+    @ExceptionHandler({
+            AdminBootstrapCompleteException.class,
+            DuplicateUserException.class,
+            StudentConflictException.class,
+            DataIntegrityViolationException.class
+    })
     public ResponseEntity<ApiError> handleConflict(RuntimeException exception) {
         String message = exception instanceof DataIntegrityViolationException
-                ? "A user with that username or email already exists."
+                ? "A conflicting record already exists."
                 : exception.getMessage();
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiError(message, List.of()));
     }

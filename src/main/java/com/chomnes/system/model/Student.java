@@ -70,6 +70,28 @@ public class Student {
         // Required by JPA.
     }
 
+    public Student(
+            Integer userId,
+            String firstName,
+            String lastName,
+            LocalDate dob,
+            String gender,
+            String photoUrl,
+            String contactNumber,
+            String address,
+            LocalDate enrollmentDate
+    ) {
+        this.userId = userId;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.dob = dob;
+        this.gender = gender;
+        this.photoUrl = photoUrl;
+        this.contactNumber = contactNumber;
+        this.address = address;
+        this.enrollmentDate = enrollmentDate;
+    }
+
     public Integer getStudentId() {
         return studentId;
     }

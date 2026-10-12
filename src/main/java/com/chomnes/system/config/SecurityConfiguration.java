@@ -1,7 +1,7 @@
 package com.chomnes.system.config;
 
 import com.nimbusds.jose.proc.SecurityContext;
-import com.nimbusds.jose.util.ImmutableSecret;
+import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -82,6 +82,11 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("Admin")
                         .requestMatchers(HttpMethod.GET, "/api/users/**").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/users/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/students").hasAnyRole("Admin", "Teacher")
+                        .requestMatchers(HttpMethod.POST, "/api/students").hasRole("Admin")
+                        .requestMatchers(HttpMethod.DELETE, "/api/students/**").hasRole("Admin")
+                        .requestMatchers(HttpMethod.GET, "/api/students/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/students/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(resourceServer -> resourceServer
