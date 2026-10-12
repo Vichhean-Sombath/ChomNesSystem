@@ -36,6 +36,13 @@ public class Subject {
         // Required by JPA.
     }
 
+    public Subject(String subjectCode, String subjectName, String description, Integer prerequisiteSubjectId) {
+        this.subjectCode = subjectCode;
+        this.subjectName = subjectName;
+        this.description = description;
+        this.prerequisiteSubjectId = prerequisiteSubjectId;
+    }
+
     public Integer getSubjectId() {
         return subjectId;
     }
