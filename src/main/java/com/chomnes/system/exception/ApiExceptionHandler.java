@@ -32,7 +32,8 @@ public class ApiExceptionHandler {
             AcademicYearNotFoundException.class,
             SemesterNotFoundException.class,
             SchoolClassNotFoundException.class,
-            SubjectNotFoundException.class
+            SubjectNotFoundException.class,
+            ClassEnrollmentNotFoundException.class
     })
     public ResponseEntity<ApiError> handleNotFound(RuntimeException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -48,6 +49,7 @@ public class ApiExceptionHandler {
             SemesterConflictException.class,
             SchoolClassConflictException.class,
             SubjectConflictException.class,
+            ClassEnrollmentConflictException.class,
             DataIntegrityViolationException.class
     })
     public ResponseEntity<ApiError> handleConflict(RuntimeException exception) {

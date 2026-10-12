@@ -35,6 +35,12 @@ public class ClassEnrollment {
         // Required by JPA.
     }
 
+    public ClassEnrollment(Integer studentId, Integer classId, LocalDate enrollmentDate) {
+        this.studentId = studentId;
+        this.classId = classId;
+        this.enrollmentDate = enrollmentDate;
+    }
+
     public Integer getEnrollmentId() {
         return enrollmentId;
     }
