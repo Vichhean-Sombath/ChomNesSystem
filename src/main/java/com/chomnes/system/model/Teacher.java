@@ -63,6 +63,30 @@ public class Teacher {
         // Required by JPA.
     }
 
+    public Teacher(
+            Integer userId,
+            String firstName,
+            String lastName,
+            LocalDate dob,
+            String gender,
+            String photoUrl,
+            String contactNumber,
+            String specialization,
+            String bio,
+            LocalDate hireDate
+    ) {
+        this.userId = userId;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.dob = dob;
+        this.gender = gender;
+        this.photoUrl = photoUrl;
+        this.contactNumber = contactNumber;
+        this.specialization = specialization;
+        this.bio = bio;
+        this.hireDate = hireDate;
+    }
+
     public Integer getTeacherId() {
         return teacherId;
     }

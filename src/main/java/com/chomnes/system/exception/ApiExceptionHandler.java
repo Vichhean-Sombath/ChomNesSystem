@@ -25,7 +25,11 @@ public class ApiExceptionHandler {
                 .body(new ApiError(exception.getMessage(), List.of()));
     }
 
-    @ExceptionHandler({UserNotFoundException.class, StudentNotFoundException.class})
+    @ExceptionHandler({
+            UserNotFoundException.class,
+            StudentNotFoundException.class,
+            TeacherNotFoundException.class
+    })
     public ResponseEntity<ApiError> handleNotFound(RuntimeException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ApiError(exception.getMessage(), List.of()));
@@ -35,6 +39,7 @@ public class ApiExceptionHandler {
             AdminBootstrapCompleteException.class,
             DuplicateUserException.class,
             StudentConflictException.class,
+            TeacherConflictException.class,
             DataIntegrityViolationException.class
     })
     public ResponseEntity<ApiError> handleConflict(RuntimeException exception) {
