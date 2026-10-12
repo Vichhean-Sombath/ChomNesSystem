@@ -35,6 +35,18 @@ public class Semester {
         // Required by JPA.
     }
 
+    public Semester(
+            Integer academicYearId,
+            String semesterName,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        this.academicYearId = academicYearId;
+        this.semesterName = semesterName;
+        this.startDate = startDate;
+        this.endDate = endDate;
+    }
+
     public Integer getSemesterId() {
         return semesterId;
     }

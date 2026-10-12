@@ -6,7 +6,9 @@ import com.chomnes.system.dto.UpdateAcademicYearRequest;
 import com.chomnes.system.exception.AcademicYearConflictException;
 import com.chomnes.system.exception.AcademicYearNotFoundException;
 import com.chomnes.system.model.AcademicYear;
+import com.chomnes.system.model.Semester;
 import com.chomnes.system.repository.AcademicYearRepository;
+import com.chomnes.system.repository.SemesterRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,9 +20,14 @@ import java.util.List;
 @Transactional
 public class AcademicYearService {
     private final AcademicYearRepository academicYearRepository;
+    private final SemesterRepository semesterRepository;
 
-    public AcademicYearService(AcademicYearRepository academicYearRepository) {
+    public AcademicYearService(
+            AcademicYearRepository academicYearRepository,
+            SemesterRepository semesterRepository
+    ) {
         this.academicYearRepository = academicYearRepository;
+        this.semesterRepository = semesterRepository;
     }
 
     @Transactional(readOnly = true)
@@ -59,6 +66,7 @@ public class AcademicYearService {
         LocalDate startDate = request.startDate() == null ? academicYear.getStartDate() : request.startDate();
         LocalDate endDate = request.endDate() == null ? academicYear.getEndDate() : request.endDate();
         requireValidDates(startDate, endDate);
+        requireDatesContainSemesters(academicYearId, startDate, endDate);
 
         if (!yearName.equals(academicYear.getYearName())
                 && academicYearRepository.existsByYearNameAndAcademicYearIdNot(yearName, academicYearId)) {
@@ -90,6 +98,16 @@ public class AcademicYearService {
     private void requireValidDates(LocalDate startDate, LocalDate endDate) {
         if (!endDate.isAfter(startDate)) {
             throw new IllegalArgumentException("End date must be after start date.");
+        }
+    }
+
+    private void requireDatesContainSemesters(Integer academicYearId, LocalDate startDate, LocalDate endDate) {
+        for (Semester semester : semesterRepository.findAllByAcademicYearIdOrderByStartDateAsc(academicYearId)) {
+            if (semester.getStartDate().isBefore(startDate) || semester.getEndDate().isAfter(endDate)) {
+                throw new AcademicYearConflictException(
+                        "Academic year dates must contain all of its semester dates."
+                );
+            }
         }
     }
 }
