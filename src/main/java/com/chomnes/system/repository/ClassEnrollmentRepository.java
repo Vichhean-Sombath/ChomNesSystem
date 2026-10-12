@@ -4,4 +4,5 @@ import com.chomnes.system.model.ClassEnrollment;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ClassEnrollmentRepository extends JpaRepository<ClassEnrollment, Integer> {
+    long countByClassIdAndStatus(Integer classId, String status);
 }

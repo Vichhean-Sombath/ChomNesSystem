@@ -41,6 +41,22 @@ public class SchoolClass {
         // Required by JPA.
     }
 
+    public SchoolClass(
+            String className,
+            Integer academicYearId,
+            Integer semesterId,
+            String roomNumber,
+            Integer maxCapacity,
+            Integer homeroomTeacherId
+    ) {
+        this.className = className;
+        this.academicYearId = academicYearId;
+        this.semesterId = semesterId;
+        this.roomNumber = roomNumber;
+        this.maxCapacity = maxCapacity;
+        this.homeroomTeacherId = homeroomTeacherId;
+    }
+
     public Integer getClassId() {
         return classId;
     }
