@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -50,6 +51,25 @@ public class AttendanceRecord {
 
     protected AttendanceRecord() {
         // Required by JPA.
+    }
+
+    public AttendanceRecord(
+            Integer scheduleId,
+            Integer studentId,
+            LocalDate attendanceDate,
+            String status,
+            Integer markedBy
+    ) {
+        this.scheduleId = scheduleId;
+        this.studentId = studentId;
+        this.attendanceDate = attendanceDate;
+        this.status = status;
+        this.markedBy = markedBy;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        lastEditedAt = LocalDateTime.now();
     }
 
     public Integer getAttendanceId() {

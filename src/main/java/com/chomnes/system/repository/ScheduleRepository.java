@@ -3,6 +3,8 @@ package com.chomnes.system.repository;
 import com.chomnes.system.model.Schedule;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
+
 public interface ScheduleRepository extends JpaRepository<Schedule, Integer> {
     boolean existsByTeacherIdAndTimeSlotId(Integer teacherId, Integer timeSlotId);
 
@@ -19,4 +21,6 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Integer> {
             Integer timeSlotId,
             Integer scheduleId
     );
+
+    List<Schedule> findAllByTeacherId(Integer teacherId);
 }
