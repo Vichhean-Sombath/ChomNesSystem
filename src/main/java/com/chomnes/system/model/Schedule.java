@@ -37,6 +37,14 @@ public class Schedule {
         // Required by JPA.
     }
 
+    public Schedule(Integer classId, Integer subjectId, Integer teacherId, Integer timeSlotId, String roomNumber) {
+        this.classId = classId;
+        this.subjectId = subjectId;
+        this.teacherId = teacherId;
+        this.timeSlotId = timeSlotId;
+        this.roomNumber = roomNumber;
+    }
+
     public Integer getScheduleId() {
         return scheduleId;
     }

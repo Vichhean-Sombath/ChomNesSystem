@@ -110,6 +110,9 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, "/api/time-slots", "/api/time-slots/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/time-slots").hasRole("Admin")
                         .requestMatchers(HttpMethod.PUT, "/api/time-slots/**").hasRole("Admin")
+                        .requestMatchers(HttpMethod.GET, "/api/schedules", "/api/schedules/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/schedules").hasRole("Admin")
+                        .requestMatchers(HttpMethod.PUT, "/api/schedules/**").hasRole("Admin")
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(resourceServer -> resourceServer
