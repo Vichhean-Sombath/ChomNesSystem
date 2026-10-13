@@ -32,6 +32,12 @@ public class TimeSlot {
         // Required by JPA.
     }
 
+    public TimeSlot(String dayOfWeek, LocalTime startTime, LocalTime endTime) {
+        this.dayOfWeek = dayOfWeek;
+        this.startTime = startTime;
+        this.endTime = endTime;
+    }
+
     public Integer getTimeSlotId() {
         return timeSlotId;
     }
