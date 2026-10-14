@@ -11,6 +11,8 @@ public interface ClassEnrollmentRepository extends JpaRepository<ClassEnrollment
 
     boolean existsByStudentIdAndClassIdAndStatus(Integer studentId, Integer classId, String status);
 
+    boolean existsByStudentIdAndClassId(Integer studentId, Integer classId);
+
     boolean existsByStudentIdAndClassIdAndStatusAndEnrollmentDateLessThanEqual(
             Integer studentId,
             Integer classId,

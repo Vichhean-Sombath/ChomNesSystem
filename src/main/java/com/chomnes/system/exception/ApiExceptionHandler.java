@@ -37,7 +37,8 @@ public class ApiExceptionHandler {
             TimeSlotNotFoundException.class,
             ScheduleNotFoundException.class,
             AttendanceRecordNotFoundException.class,
-            GradingCriterionNotFoundException.class
+            GradingCriterionNotFoundException.class,
+            AssessmentNotFoundException.class
     })
     public ResponseEntity<ApiError> handleNotFound(RuntimeException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -58,6 +59,7 @@ public class ApiExceptionHandler {
             ScheduleConflictException.class,
             AttendanceRecordConflictException.class,
             GradingCriterionConflictException.class,
+            AssessmentConflictException.class,
             DataIntegrityViolationException.class
     })
     public ResponseEntity<ApiError> handleConflict(RuntimeException exception) {

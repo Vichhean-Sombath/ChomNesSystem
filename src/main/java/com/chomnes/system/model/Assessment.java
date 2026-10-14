@@ -39,6 +39,20 @@ public class Assessment {
         // Required by JPA.
     }
 
+    public Assessment(
+            Integer scheduleId,
+            Integer criteriaId,
+            String assessmentName,
+            BigDecimal maxScore,
+            LocalDate assessmentDate
+    ) {
+        this.scheduleId = scheduleId;
+        this.criteriaId = criteriaId;
+        this.assessmentName = assessmentName;
+        this.maxScore = maxScore;
+        this.assessmentDate = assessmentDate;
+    }
+
     public Integer getAssessmentId() {
         return assessmentId;
     }
