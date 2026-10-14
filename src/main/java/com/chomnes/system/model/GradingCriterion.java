@@ -38,6 +38,20 @@ public class GradingCriterion {
         // Required by JPA.
     }
 
+    public GradingCriterion(
+            Integer subjectId,
+            Integer classId,
+            String componentName,
+            BigDecimal weightPercentage,
+            Integer attemptCount
+    ) {
+        this.subjectId = subjectId;
+        this.classId = classId;
+        this.componentName = componentName;
+        this.weightPercentage = weightPercentage;
+        this.attemptCount = attemptCount;
+    }
+
     public Integer getCriteriaId() {
         return criteriaId;
     }

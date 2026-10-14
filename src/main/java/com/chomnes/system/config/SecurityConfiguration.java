@@ -116,6 +116,9 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, "/api/attendance-records", "/api/attendance-records/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/attendance-records").hasAnyRole("Admin", "Teacher")
                         .requestMatchers(HttpMethod.PUT, "/api/attendance-records/**").hasAnyRole("Admin", "Teacher")
+                        .requestMatchers(HttpMethod.GET, "/api/grading-criteria", "/api/grading-criteria/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/grading-criteria").hasRole("Admin")
+                        .requestMatchers(HttpMethod.PUT, "/api/grading-criteria/**").hasRole("Admin")
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(resourceServer -> resourceServer
