@@ -48,6 +48,14 @@ public class Grade {
         // Required by JPA.
     }
 
+    public Grade(Integer assessmentId, Integer studentId, BigDecimal score, Integer enteredBy, Boolean isPublished) {
+        this.assessmentId = assessmentId;
+        this.studentId = studentId;
+        this.score = score;
+        this.enteredBy = enteredBy;
+        this.isPublished = isPublished;
+    }
+
     public Integer getGradeId() {
         return gradeId;
     }
