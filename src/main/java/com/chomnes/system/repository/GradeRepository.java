@@ -15,4 +15,6 @@ public interface GradeRepository extends JpaRepository<Grade, Integer> {
     List<Grade> findAllByStudentIdAndIsPublishedTrueOrderByEnteredAtDescGradeIdDesc(Integer studentId);
 
     List<Grade> findAllByAssessmentIdInOrderByEnteredAtDescGradeIdDesc(List<Integer> assessmentIds);
+
+    List<Grade> findAllByAssessmentIdInAndStudentIdAndIsPublishedTrue(List<Integer> assessmentIds, Integer studentId);
 }

@@ -25,4 +25,6 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Integer> {
     List<Schedule> findAllByTeacherId(Integer teacherId);
 
     List<Schedule> findAllByClassIdIn(List<Integer> classIds);
+
+    List<Schedule> findAllByClassIdAndSubjectId(Integer classId, Integer subjectId);
 }

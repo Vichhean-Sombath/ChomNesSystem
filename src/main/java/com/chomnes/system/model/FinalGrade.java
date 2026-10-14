@@ -55,6 +55,20 @@ public class FinalGrade {
         // Required by JPA.
     }
 
+    public FinalGrade(
+            Integer studentId,
+            Integer subjectId,
+            Integer classId,
+            Integer semesterId,
+            BigDecimal finalScore
+    ) {
+        this.studentId = studentId;
+        this.subjectId = subjectId;
+        this.classId = classId;
+        this.semesterId = semesterId;
+        this.finalScore = finalScore;
+    }
+
     public Integer getFinalGradeId() {
         return finalGradeId;
     }
