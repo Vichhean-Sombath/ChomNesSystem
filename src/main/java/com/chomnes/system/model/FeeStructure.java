@@ -39,6 +39,20 @@ public class FeeStructure {
         // Required by JPA.
     }
 
+    public FeeStructure(
+            Integer classId,
+            Integer semesterId,
+            String feeName,
+            BigDecimal amount,
+            LocalDate dueDate
+    ) {
+        this.classId = classId;
+        this.semesterId = semesterId;
+        this.feeName = feeName;
+        this.amount = amount;
+        this.dueDate = dueDate;
+    }
+
     public Integer getFeeId() {
         return feeId;
     }
