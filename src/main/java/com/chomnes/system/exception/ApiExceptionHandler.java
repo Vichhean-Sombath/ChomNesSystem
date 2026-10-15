@@ -41,7 +41,8 @@ public class ApiExceptionHandler {
             AssessmentNotFoundException.class,
             GradeNotFoundException.class,
             FinalGradeNotFoundException.class,
-            FeeStructureNotFoundException.class
+            FeeStructureNotFoundException.class,
+            InvoiceNotFoundException.class
     })
     public ResponseEntity<ApiError> handleNotFound(RuntimeException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -66,6 +67,7 @@ public class ApiExceptionHandler {
             GradeConflictException.class,
             FinalGradeConflictException.class,
             FeeStructureConflictException.class,
+            InvoiceConflictException.class,
             DataIntegrityViolationException.class
     })
     public ResponseEntity<ApiError> handleConflict(RuntimeException exception) {

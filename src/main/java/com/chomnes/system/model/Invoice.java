@@ -63,6 +63,26 @@ public class Invoice {
         // Required by JPA.
     }
 
+    public Invoice(
+            String invoiceNumber,
+            Integer studentId,
+            Integer feeId,
+            Integer semesterId,
+            LocalDate issueDate,
+            LocalDate dueDate,
+            BigDecimal totalAmount
+    ) {
+        this.invoiceNumber = invoiceNumber;
+        this.studentId = studentId;
+        this.feeId = feeId;
+        this.semesterId = semesterId;
+        this.issueDate = issueDate;
+        this.dueDate = dueDate;
+        this.totalAmount = totalAmount;
+        this.amountPaid = BigDecimal.ZERO;
+        this.status = "Unpaid";
+    }
+
     public Integer getInvoiceId() {
         return invoiceId;
     }
