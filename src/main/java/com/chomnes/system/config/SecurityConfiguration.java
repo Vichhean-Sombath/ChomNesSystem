@@ -136,6 +136,8 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST, "/api/payments").hasRole("Admin")
                         .requestMatchers(HttpMethod.GET, "/api/bakong-qr-requests", "/api/bakong-qr-requests/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/bakong-qr-requests").hasAnyRole("Admin", "Student")
+                        .requestMatchers(HttpMethod.GET, "/api/certificates", "/api/certificates/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/certificates").hasRole("Admin")
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(resourceServer -> resourceServer

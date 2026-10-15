@@ -43,6 +43,22 @@ public class Certificate {
         // Required by JPA.
     }
 
+    public Certificate(
+            Integer studentId,
+            String certificateType,
+            String templateUsed,
+            LocalDate issueDate,
+            String generatedFileUrl,
+            Integer issuedBy
+    ) {
+        this.studentId = studentId;
+        this.certificateType = certificateType;
+        this.templateUsed = templateUsed;
+        this.issueDate = issueDate;
+        this.generatedFileUrl = generatedFileUrl;
+        this.issuedBy = issuedBy;
+    }
+
     public Integer getCertificateId() {
         return certificateId;
     }
