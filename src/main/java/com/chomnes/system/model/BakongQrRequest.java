@@ -56,6 +56,21 @@ public class BakongQrRequest {
         // Required by JPA.
     }
 
+    public BakongQrRequest(
+            Integer invoiceId,
+            String md5,
+            BigDecimal amountKhr,
+            BigDecimal amountUsd,
+            LocalDateTime expiresAt
+    ) {
+        this.invoiceId = invoiceId;
+        this.md5 = md5;
+        this.amountKhr = amountKhr;
+        this.amountUsd = amountUsd;
+        this.expiresAt = expiresAt;
+        this.status = "Pending";
+    }
+
     public Integer getQrId() {
         return qrId;
     }
