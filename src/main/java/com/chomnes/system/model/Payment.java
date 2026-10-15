@@ -51,6 +51,26 @@ public class Payment {
         // Required by JPA.
     }
 
+    public Payment(
+            Integer invoiceId,
+            LocalDate paymentDate,
+            BigDecimal amount,
+            String paymentMethod,
+            String receiptUrl,
+            String transactionReference,
+            Integer recordedBy,
+            String notes
+    ) {
+        this.invoiceId = invoiceId;
+        this.paymentDate = paymentDate;
+        this.amount = amount;
+        this.paymentMethod = paymentMethod;
+        this.receiptUrl = receiptUrl;
+        this.transactionReference = transactionReference;
+        this.recordedBy = recordedBy;
+        this.notes = notes;
+    }
+
     public Integer getPaymentId() {
         return paymentId;
     }

@@ -132,6 +132,8 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.PUT, "/api/fee-structures/**").hasRole("Admin")
                         .requestMatchers(HttpMethod.GET, "/api/invoices", "/api/invoices/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/invoices").hasRole("Admin")
+                        .requestMatchers(HttpMethod.GET, "/api/payments", "/api/payments/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/payments").hasRole("Admin")
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(resourceServer -> resourceServer
