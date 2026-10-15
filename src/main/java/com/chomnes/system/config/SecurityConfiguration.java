@@ -138,6 +138,10 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST, "/api/bakong-qr-requests").hasAnyRole("Admin", "Student")
                         .requestMatchers(HttpMethod.GET, "/api/certificates", "/api/certificates/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/certificates").hasRole("Admin")
+                        .requestMatchers(HttpMethod.GET, "/api/lesson-resources", "/api/lesson-resources/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/lesson-resources").hasAnyRole("Admin", "Teacher")
+                        .requestMatchers(HttpMethod.PUT, "/api/lesson-resources/**").hasAnyRole("Admin", "Teacher")
+                        .requestMatchers(HttpMethod.DELETE, "/api/lesson-resources/**").hasAnyRole("Admin", "Teacher")
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(resourceServer -> resourceServer

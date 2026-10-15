@@ -54,6 +54,22 @@ public class LessonResource {
         // Required by JPA.
     }
 
+    public LessonResource(
+            Integer scheduleId,
+            Integer teacherId,
+            String title,
+            String description,
+            String resourceType,
+            String fileUrl
+    ) {
+        this.scheduleId = scheduleId;
+        this.teacherId = teacherId;
+        this.title = title;
+        this.description = description;
+        this.resourceType = resourceType;
+        this.fileUrl = fileUrl;
+    }
+
     public Integer getResourceId() {
         return resourceId;
     }

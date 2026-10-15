@@ -45,7 +45,8 @@ public class ApiExceptionHandler {
             InvoiceNotFoundException.class,
             PaymentNotFoundException.class,
             BakongQrRequestNotFoundException.class,
-            CertificateNotFoundException.class
+            CertificateNotFoundException.class,
+            LessonResourceNotFoundException.class
     })
     public ResponseEntity<ApiError> handleNotFound(RuntimeException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -73,6 +74,7 @@ public class ApiExceptionHandler {
             InvoiceConflictException.class,
             PaymentConflictException.class,
             BakongQrRequestConflictException.class,
+            LessonResourceConflictException.class,
             DataIntegrityViolationException.class
     })
     public ResponseEntity<ApiError> handleConflict(RuntimeException exception) {
