@@ -1,6 +1,5 @@
 package com.chomnes.system.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -8,7 +7,7 @@ import jakarta.validation.constraints.Size;
 public record UpdateLessonResourceRequest(
         @Positive Integer scheduleId,
         Boolean clearSchedule,
-        @NotBlank @Size(max = 150) String title,
+        @Size(max = 150) String title,
         String description,
         Boolean clearDescription,
         @Pattern(

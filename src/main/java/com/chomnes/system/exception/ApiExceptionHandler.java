@@ -46,7 +46,8 @@ public class ApiExceptionHandler {
             PaymentNotFoundException.class,
             BakongQrRequestNotFoundException.class,
             CertificateNotFoundException.class,
-            LessonResourceNotFoundException.class
+            LessonResourceNotFoundException.class,
+            StudentEmergencyContactNotFoundException.class
     })
     public ResponseEntity<ApiError> handleNotFound(RuntimeException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)

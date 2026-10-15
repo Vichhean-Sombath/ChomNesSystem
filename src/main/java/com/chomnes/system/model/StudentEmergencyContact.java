@@ -40,6 +40,20 @@ public class StudentEmergencyContact {
         // Required by JPA.
     }
 
+    public StudentEmergencyContact(
+            Integer studentId,
+            String contactName,
+            String relationship,
+            String phoneNumber,
+            String email
+    ) {
+        this.studentId = studentId;
+        this.contactName = contactName;
+        this.relationship = relationship;
+        this.phoneNumber = phoneNumber;
+        this.email = email;
+    }
+
     public Integer getContactId() {
         return contactId;
     }
