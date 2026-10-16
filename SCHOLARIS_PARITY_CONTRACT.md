@@ -1,7 +1,7 @@
 # Scholaris API Feature Parity Contract
 
 **Stage:** 1 — Define the parity contract  
-**Status:** Stages 1–7 implemented for the tracked management, portal, attendance QR, dashboard, reports, payment-provider, private file delivery, and optional payment-notification scope. Populated-relation response differences remain open.
+**Status:** Stages 1–7 implemented for the tracked management, portal, attendance QR, dashboard, reports, payment-provider, private file delivery, and optional payment-notification scope. Stage 8 release audit is complete but the project is **not release-verified**: related-record response differences remain, and Maven could not resolve the Spring Boot parent because repository access was denied.
 **Reference:** `../ScholarisAPI` (local Scholaris API source and README).  
 **Target:** `ChomNesSystem` Spring Boot API.
 
@@ -107,7 +107,17 @@ When a payment is recorded manually or confirmed by a payment provider, optional
 
 Implementation evidence: `FileStorageService.java`, `StoredFileController.java`, `CertificateController.java`, `LessonResourceController.java`, `CertificateService.java`, `LessonResourceService.java`, `PaymentNotificationService.java`, `PaymentService.java`, `SecurityConfiguration.java`, and `application.properties`.
 
-## 10. Business behavior that must be preserved
+## 10. Stage 8 compatibility and release check
+
+The release audit reviewed Scholaris populate behavior, Spring compatibility response mapping, endpoint role rules, file-delivery authorization, provider configuration, and available build verification. It confirmed that the Scholaris compatibility advice converts JSON naming and wraps responses, but some management responses still expose foreign-key IDs where Scholaris returns populated records. The gaps include relationships in academic years, semesters, classes, subjects, enrollments, time slots, schedules, attendance, grading criteria, assessments, grades, final grades, fee structures, invoices, payments, certificates, and emergency contacts. These differences must be reconciled before claiming complete API-response parity.
+
+`mvn -B test` could not start because Maven's configured local repository (`C:\.m2\repository`) is not writable. A retry with a project-local Maven settings file reached dependency resolution but Maven Central denied access while retrieving `spring-boot-starter-parent:4.1.1`. No test sources are present in this project snapshot, and compile/runtime behavior is therefore unverified. This is an environment limitation, not evidence of a successful release build.
+
+Before release, run `mvn test` in an environment with Maven Central access and a writable local repository; address the populated-relation contract differences; configure production database/JWT secrets and provider credentials for enabled payment methods; configure `FILE_STORAGE_DIR` as durable storage shared by all API instances; and perform authenticated role-based smoke checks for the Scholaris compatibility routes, file access, Stripe callbacks, and Bakong verification. Email and Telegram remain optional and need credentials only when enabled.
+
+Release audit evidence: `ScholarisCompatibilityAdvice.java`, `SecurityConfiguration.java`, `SCHOLARIS_PARITY_CONTRACT.md`, and Maven test attempts recorded for this stage.
+
+## 11. Business behavior that must be preserved
 
 1. **Authentication and account lifecycle:** login verifies credentials and returns user role plus linked `student_id`/`teacher_id`; registration only creates `Teacher` or `Student` accounts and creates the matching profile; logout and password change behave as in the reference; disabled accounts cannot continue authenticating; admins can re-enable them.
 2. **Authorization and ownership:** student portal and student payment operations use the authenticated student's own profile. A student cannot read or mutate another student's information by changing an ID in a request. Teacher/admin permissions remain route-specific as in the matrix.
@@ -117,18 +127,18 @@ Implementation evidence: `FileStorageService.java`, `StoredFileController.java`,
 6. **Dashboard/reports:** return the same metrics and filter semantics as the reference. Reports accept `range`, `academicYearId`, and `semesterId` filters; dashboard supports its documented revenue range. Zero-data results remain valid and use stable response keys.
 7. **Files and notifications:** certificates and lesson resources must be retrievable artifacts with stable URLs or equivalent delivery; configured email/Telegram events follow the reference's optional behavior.
 
-## 11. Data model and intentional implementation difference
+## 12. Data model and intentional implementation difference
 
 The Spring Flyway migration and JPA entities map the same 22 core Scholaris tables (`users` through `student_emergency_contacts`). Scholaris's current server uses MongoDB/Mongoose while Spring uses SQL Server/JPA. This contract requires equivalent records and observable relationships, not identical storage engines or query implementation.
 
-## 12. Stage 1 completion criteria
+## 13. Stage 1 completion criteria
 
 - This document is the baseline checklist for subsequent implementation stages.
 - Each feature has a reference route/access entry and a Spring baseline status.
 - Later stages must update the status and link implementation evidence here; a feature is complete only when its behavior, access control, and response contract meet the relevant sections above.
 - Tests and client-level verification belong to implementation/release stages; this stage records the contract and does not claim runtime parity.
 
-## 13. Source basis
+## 14. Source basis
 
 - `../ScholarisAPI/README.md`
 - `../ScholarisAPI/server.js`
