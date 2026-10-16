@@ -20,6 +20,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -33,6 +35,7 @@ public class PaymentService {
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PaymentNotificationService paymentNotifications;
     private final String configuredSystemUserId;
 
     public PaymentService(
@@ -41,6 +44,7 @@ public class PaymentService {
             StudentRepository studentRepository,
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
+            PaymentNotificationService paymentNotifications,
             @Value("${app.payments.system-user-id:}") String configuredSystemUserId
     ) {
         this.paymentRepository = paymentRepository;
@@ -48,6 +52,7 @@ public class PaymentService {
         this.studentRepository = studentRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.paymentNotifications = paymentNotifications;
         this.configuredSystemUserId = configuredSystemUserId;
     }
 
@@ -129,7 +134,9 @@ public class PaymentService {
             invoice.setStatus("Partial");
         }
         invoiceRepository.save(invoice);
-        return PaymentResponse.from(paymentRepository.save(payment));
+        Payment saved = paymentRepository.save(payment);
+        schedulePaymentNotification(saved.getPaymentId());
+        return PaymentResponse.from(saved);
     }
 
     /** Records a provider-confirmed charge exactly once and recalculates its invoice under a row lock. */
@@ -168,7 +175,22 @@ public class PaymentService {
         Payment payment = new Payment(invoiceId, LocalDate.now(), amount, normalizedMethod,
                 receiptUrl, transactionReference, systemUserId,
                 "Auto-recorded via " + normalizedMethod + " gateway");
-        return PaymentResponse.from(paymentRepository.save(payment));
+        Payment saved = paymentRepository.save(payment);
+        schedulePaymentNotification(saved.getPaymentId());
+        return PaymentResponse.from(saved);
+    }
+
+    private void schedulePaymentNotification(Integer paymentId) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            paymentNotifications.notifyRecordedPayment(paymentId);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                paymentNotifications.notifyRecordedPayment(paymentId);
+            }
+        });
     }
 
     private PaymentResponse existingProviderPayment(

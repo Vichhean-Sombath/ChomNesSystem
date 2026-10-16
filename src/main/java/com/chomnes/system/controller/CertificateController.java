@@ -4,6 +4,7 @@ import com.chomnes.system.dto.CertificateResponse;
 import com.chomnes.system.dto.CreateCertificateRequest;
 import com.chomnes.system.model.User;
 import com.chomnes.system.service.CertificateService;
+import com.chomnes.system.service.FileStorageService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -26,9 +28,11 @@ import java.util.Map;
 @RequestMapping({"/api/certificates", "/certificate"})
 public class CertificateController {
     private final CertificateService certificateService;
+    private final FileStorageService files;
 
-    public CertificateController(CertificateService certificateService) {
+    public CertificateController(CertificateService certificateService, FileStorageService files) {
         this.certificateService = certificateService;
+        this.files = files;
     }
 
     @GetMapping({"", "/data"})
@@ -57,6 +61,21 @@ public class CertificateController {
                 .buildAndExpand(created.certificateId())
                 .toUri();
         return ResponseEntity.created(location).body(created);
+    }
+
+    @PostMapping({"/{certificateId}/file", "/upload/{certificateId}"})
+    public Map<String, Object> uploadFile(
+            @PathVariable Integer certificateId,
+            @RequestPart("file") org.springframework.web.multipart.MultipartFile file
+    ) {
+        FileStorageService.StoredFile stored = files.store(file);
+        try {
+            certificateService.attachFile(certificateId, stored.url());
+        } catch (RuntimeException exception) {
+            files.discard(stored);
+            throw exception;
+        }
+        return Map.of("fileUrl", stored.url(), "fileName", stored.originalName(), "size", stored.size());
     }
 
     @DeleteMapping({"/{certificateId}", "/delete/{certificateId}"})

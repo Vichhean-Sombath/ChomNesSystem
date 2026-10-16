@@ -84,6 +84,24 @@ public class CertificateService {
         certificateRepository.deleteById(certificateId);
     }
 
+    @Transactional(readOnly = true)
+    public boolean canReadFile(String fileUrl, Integer requesterId, User.Role requesterRole) {
+        Certificate certificate = certificateRepository.findByGeneratedFileUrl(fileUrl).orElse(null);
+        if (certificate == null) return false;
+        if (requesterRole == User.Role.Admin) return true;
+        if (requesterRole == User.Role.Student) {
+            return getStudentForUser(requesterId).getStudentId().equals(certificate.getStudentId());
+        }
+        return false;
+    }
+
+    public void attachFile(Integer certificateId, String fileUrl) {
+        Certificate certificate = certificateRepository.findById(certificateId)
+                .orElseThrow(() -> new CertificateNotFoundException(certificateId));
+        certificate.setGeneratedFileUrl(fileUrl);
+        certificateRepository.save(certificate);
+    }
+
     private Student getStudentForUser(Integer userId) {
         return studentRepository.findByUserId(userId)
                 .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));

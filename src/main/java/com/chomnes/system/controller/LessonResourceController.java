@@ -5,6 +5,7 @@ import com.chomnes.system.dto.LessonResourceResponse;
 import com.chomnes.system.dto.UpdateLessonResourceRequest;
 import com.chomnes.system.model.User;
 import com.chomnes.system.service.LessonResourceService;
+import com.chomnes.system.service.FileStorageService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -17,19 +18,24 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping({"/api/lesson-resources", "/lesson_resource"})
 public class LessonResourceController {
     private final LessonResourceService resourceService;
+    private final FileStorageService files;
 
-    public LessonResourceController(LessonResourceService resourceService) {
+    public LessonResourceController(LessonResourceService resourceService, FileStorageService files) {
         this.resourceService = resourceService;
+        this.files = files;
     }
 
     @GetMapping({"", "/data"})
@@ -58,6 +64,22 @@ public class LessonResourceController {
                 .buildAndExpand(created.resourceId())
                 .toUri();
         return ResponseEntity.created(location).body(created);
+    }
+
+    @PostMapping({"/{resourceId}/file", "/upload/{resourceId}"})
+    public Map<String, Object> uploadFile(
+            @PathVariable Integer resourceId,
+            @RequestPart("file") MultipartFile file,
+            @AuthenticationPrincipal Jwt principal
+    ) {
+        FileStorageService.StoredFile stored = files.store(file);
+        try {
+            resourceService.attachFile(resourceId, stored.url(), requesterId(principal), requesterRole(principal));
+        } catch (RuntimeException exception) {
+            files.discard(stored);
+            throw exception;
+        }
+        return Map.of("fileUrl", stored.url(), "fileName", stored.originalName(), "size", stored.size());
     }
 
     @PutMapping({"/{resourceId}", "/update/{resourceId}"})

@@ -1,7 +1,7 @@
 # Scholaris API Feature Parity Contract
 
 **Stage:** 1 — Define the parity contract  
-**Status:** Stages 1–6 implemented for the tracked management, portal, attendance QR, dashboard, reports, and payment-provider scope. File delivery parity, notifications, and remaining populated-relation response differences are still open.
+**Status:** Stages 1–7 implemented for the tracked management, portal, attendance QR, dashboard, reports, payment-provider, private file delivery, and optional payment-notification scope. Populated-relation response differences remain open.
 **Reference:** `../ScholarisAPI` (local Scholaris API source and README).  
 **Target:** `ChomNesSystem` Spring Boot API.
 
@@ -47,13 +47,13 @@ The target is **API compatibility as well as feature parity**: expose the refere
 | Payments | Admin CRUD at `/payment/data[/:id]`, `/payment/create`, `/payment/update/:id`, `/payment/delete/:id`; provider routes below | Implemented with provider-confirmed, idempotent payment recording; ordinary payment CRUD remains available. |
 | Stripe | `GET /payment/stripe/config` (public); `POST /payment/stripe/checkout` and `/verify` (Admin/Student); `GET /payment/stripe/success` and `/cancel` (provider redirect); `POST /payment/stripe/webhook` (signature-verified provider callback); `POST /payment/stripe/record` (Admin/Student) | Implemented with Checkout Sessions, raw-body signature verification, session ownership/amount validation, webhook processing, and duplicate-event safety. The record route requires a Stripe `session_id` and verifies it before recording. |
 | Bakong | `POST /payment/bakong/qr` and `/verify` (Admin/Student); `GET /payment/bakong/account` (Admin); `POST /payment/bakong/webhook` (provider callback) | Implemented with NBC KHQR generation, authenticated Open API transaction/account checks, amount and merchant validation, expiry, and idempotent recording. |
-| Certificates | `GET /certificate/data[/:id]`, `POST /certificate/create`, `DELETE /certificate/delete/:id` (Admin) | Metadata read/create at `/api/certificates`; delete and student self-service/file behavior are absent. |
-| Lesson resources | `GET /lesson_resource/data[/:id]`, create/update/delete (Admin/Teacher) | CRUD exists at `/api/lesson-resources`; reference paths are absent. Verify parity for file delivery and authorization. |
+| Certificates | `GET /certificate/data[/:id]`, `POST /certificate/create`, `DELETE /certificate/delete/:id` (Admin) | Metadata routes and student self-service are implemented; Stage 7 adds private certificate upload and access-controlled download. |
+| Lesson resources | `GET /lesson_resource/data[/:id]`, create/update/delete (Admin/Teacher) | CRUD and student portal listing are implemented; Stage 7 adds teacher/admin uploads and schedule-enrollment-scoped downloads. |
 | Emergency contacts | `GET /student-emergency-contact/data[/:id]`, create/update/delete (Admin) | CRUD exists at `/api/student-emergency-contacts`; student self-service permissions and reference paths differ. |
 | Admin dashboard | `GET /dashboard/summary` (Admin) | Implemented in Stage 3 with revenue ranges, monthly comparison, payment methods, invoice status, student enrollment trend, and recent payments. |
 | Admin reports | `GET /reports/summary` (Admin) | Implemented in Stage 5 with financial, enrollment, academic, and teacher workload summaries plus range and academic filters. |
 | Student portal | `GET /student/me/{summary,classes,schedule,grades,attendance,invoices,certificates,resources,profile}` and `POST /student/me/attendance/checkin` (Student) | Implemented in Stage 3; reads are scoped to the signed-in student's profile and active enrollments. Stage 4 upgrades check-in to schedule-bound signed QR tokens. |
-| Notifications | Optional email and Telegram notifications, especially payment events | Absent in Spring baseline. |
+| Notifications | Optional email and Telegram notifications, especially payment events | Stage 7 sends optional Telegram payment notices and email receipts to the first student emergency contact with an email address. |
 
 The reference CRUD route pattern is explicit per table above: where it says “create/update/delete,” those are respectively `POST /<resource>/create`, `PUT /<resource>/update/:id`, and `DELETE /<resource>/delete/:id` for the resource's displayed route stem.
 
@@ -85,7 +85,7 @@ Implementation evidence: `AttendanceQrController.java`, `AttendanceQrService.jav
 
 `GET /dashboard/summary` remains available to Admin users with the existing revenue summary. `GET /reports/summary` now returns the Scholaris response envelope and four report sections: financial, enrollment, academic, and teacher workload. It accepts `range` (`weekly`, `monthly`, or `yearly`, defaulting to monthly for other values), `academicYearId`, and `semesterId`; the academic filters are applied to matching report sections. Financial results include revenue trends, payment methods, collection metrics, and up to 50 outstanding invoice rows. Enrollment results include student trends/distributions and class capacity. Academic results include attendance and final-grade summaries. Teacher workload results include schedule density and per-teacher averages.
 
-The report is aggregated from the Spring/JPA datasets in memory. `ReportsController.java`, `ReportsService.java`, `SecurityConfiguration.java`, and `ScholarisCompatibilityAdvice.java` implement the route, Admin access, aggregation, and camelCase compatibility response. File-delivery parity remains outstanding.
+The report is aggregated from the Spring/JPA datasets in memory. `ReportsController.java`, `ReportsService.java`, `SecurityConfiguration.java`, and `ScholarisCompatibilityAdvice.java` implement the route, Admin access, aggregation, and camelCase compatibility response.
 
 ## 8. Stage 6 implementation update — payment integrations
 
@@ -97,7 +97,17 @@ Configure these environment variables where the corresponding provider is enable
 
 Implementation evidence: `PaymentIntegrationController.java`, `PaymentIntegrationService.java`, `StripeProviderClient.java`, `BakongProviderClient.java`, `PaymentService.java`, `BakongQrRequestService.java`, `SecurityConfiguration.java`, `ScholarisCompatibilityAdvice.java`, and `V2__enforce_payment_transaction_idempotency.sql`.
 
-## 9. Business behavior that must be preserved
+## 9. Stage 7 implementation update — files, certificates, and notifications
+
+Administrators can attach a file to an issued certificate with `POST /api/certificates/{id}/file` (or `/certificate/{id}/file`); administrators and the owning teacher can attach a file to a lesson resource with `POST /api/lesson-resources/{id}/file` (or `/lesson_resource/{id}/file`). Both accept a multipart `file` field, store a private copy under `FILE_STORAGE_DIR` (default `./uploads`), and return the stable `/files/{uuid}.{extension}` URL saved in the existing record. Uploads are limited to 25 MB and common PDF, image, Office document, text, and MP4 types.
+
+`GET /files/{uuid}.{extension}` requires authentication. The API serves only files referenced by a certificate or lesson resource and checks the same access rules as that record: certificate owner or Admin, and lesson-resource Admin, owning Teacher, or Student with an active enrollment in the scheduled class. Files are returned as attachments with content-type sniffing disabled.
+
+When a payment is recorded manually or confirmed by a payment provider, optional notifications run after the payment transaction commits. Telegram sends a payment summary to the configured chat; SMTP sends a receipt to the student's first emergency contact with an email address. Notification delivery failures do not undo successful payments. Configure `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_ID`, `EMAIL_SMTP_HOST`, `EMAIL_SMTP_PORT` (default 587), `EMAIL_SENDER_ADDRESS`, and `EMAIL_APP_PASSWORD` to enable delivery. Upload storage can be relocated with `FILE_STORAGE_DIR`; deployments should point it at durable storage shared by API instances.
+
+Implementation evidence: `FileStorageService.java`, `StoredFileController.java`, `CertificateController.java`, `LessonResourceController.java`, `CertificateService.java`, `LessonResourceService.java`, `PaymentNotificationService.java`, `PaymentService.java`, `SecurityConfiguration.java`, and `application.properties`.
+
+## 10. Business behavior that must be preserved
 
 1. **Authentication and account lifecycle:** login verifies credentials and returns user role plus linked `student_id`/`teacher_id`; registration only creates `Teacher` or `Student` accounts and creates the matching profile; logout and password change behave as in the reference; disabled accounts cannot continue authenticating; admins can re-enable them.
 2. **Authorization and ownership:** student portal and student payment operations use the authenticated student's own profile. A student cannot read or mutate another student's information by changing an ID in a request. Teacher/admin permissions remain route-specific as in the matrix.
@@ -107,18 +117,18 @@ Implementation evidence: `PaymentIntegrationController.java`, `PaymentIntegratio
 6. **Dashboard/reports:** return the same metrics and filter semantics as the reference. Reports accept `range`, `academicYearId`, and `semesterId` filters; dashboard supports its documented revenue range. Zero-data results remain valid and use stable response keys.
 7. **Files and notifications:** certificates and lesson resources must be retrievable artifacts with stable URLs or equivalent delivery; configured email/Telegram events follow the reference's optional behavior.
 
-## 10. Data model and intentional implementation difference
+## 11. Data model and intentional implementation difference
 
 The Spring Flyway migration and JPA entities map the same 22 core Scholaris tables (`users` through `student_emergency_contacts`). Scholaris's current server uses MongoDB/Mongoose while Spring uses SQL Server/JPA. This contract requires equivalent records and observable relationships, not identical storage engines or query implementation.
 
-## 11. Stage 1 completion criteria
+## 12. Stage 1 completion criteria
 
 - This document is the baseline checklist for subsequent implementation stages.
 - Each feature has a reference route/access entry and a Spring baseline status.
 - Later stages must update the status and link implementation evidence here; a feature is complete only when its behavior, access control, and response contract meet the relevant sections above.
 - Tests and client-level verification belong to implementation/release stages; this stage records the contract and does not claim runtime parity.
 
-## 12. Source basis
+## 13. Source basis
 
 - `../ScholarisAPI/README.md`
 - `../ScholarisAPI/server.js`

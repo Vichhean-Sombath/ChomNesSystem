@@ -154,6 +154,25 @@ public class LessonResourceService {
         resourceRepository.delete(resource);
     }
 
+    @Transactional(readOnly = true)
+    public boolean canReadFile(String fileUrl, Integer requesterId, User.Role requesterRole) {
+        LessonResource resource = resourceRepository.findByFileUrl(fileUrl).orElse(null);
+        if (resource == null) return false;
+        try {
+            authorizeRead(resource, requesterId, requesterRole);
+            return true;
+        } catch (AccessDeniedException exception) {
+            return false;
+        }
+    }
+
+    public void attachFile(Integer resourceId, String fileUrl, Integer requesterId, User.Role requesterRole) {
+        LessonResource resource = getResource(resourceId);
+        authorizeManage(resource, requesterId, requesterRole);
+        resource.setFileUrl(fileUrl);
+        resourceRepository.save(resource);
+    }
+
     private LessonResource getResource(Integer resourceId) {
         return resourceRepository.findById(resourceId)
                 .orElseThrow(() -> new LessonResourceNotFoundException(resourceId));
