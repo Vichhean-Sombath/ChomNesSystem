@@ -166,6 +166,8 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.DELETE, "/user/disable/**").hasRole("Admin")
                         .requestMatchers(HttpMethod.DELETE, "/user/**").hasRole("Admin")
                         .requestMatchers(HttpMethod.POST, "/user/enable/**").hasRole("Admin")
+                        .requestMatchers(HttpMethod.GET, "/dashboard/summary").hasRole("Admin")
+                        .requestMatchers("/student/me/**").hasRole("Student")
                         .requestMatchers(HttpMethod.GET, "/student/data", "/student/data/**", "/teacher/data", "/teacher/data/**")
                                 .hasAnyRole("Admin", "Teacher")
                         .requestMatchers(HttpMethod.GET, "/student/**", "/teacher/**").hasAnyRole("Admin", "Teacher")

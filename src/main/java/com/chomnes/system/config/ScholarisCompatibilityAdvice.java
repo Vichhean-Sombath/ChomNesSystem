@@ -88,6 +88,12 @@ public class ScholarisCompatibilityAdvice extends RequestBodyAdviceAdapter
 
         String method = request.getMethod();
         String path = request.getRequestURI();
+        if (path.equals("/dashboard/summary")) {
+            return Map.of("message", "Dashboard summary retrieved successfully!", "data", body == null ? Map.of() : body);
+        }
+        if (path.startsWith("/student/me/")) {
+            return Map.of("message", studentPortalMessage(path), "data", body == null ? Map.of() : body);
+        }
         if (path.startsWith("/user/enable/")) {
             return Map.of("message", "User activated successfully!", "data", toSnakeCase(body));
         }
@@ -195,5 +201,19 @@ public class ScholarisCompatibilityAdvice extends RequestBodyAdviceAdapter
             case "DELETE" -> "deleted";
             default -> "retrieved";
         };
+    }
+
+    private String studentPortalMessage(String path) {
+        if (path.endsWith("/attendance/checkin")) return "Attendance checked in successfully!";
+        if (path.endsWith("/summary")) return "Student summary retrieved successfully!";
+        if (path.endsWith("/classes")) return "Student classes retrieved successfully!";
+        if (path.endsWith("/schedule")) return "Student schedule retrieved successfully!";
+        if (path.endsWith("/grades")) return "Student grades retrieved successfully!";
+        if (path.endsWith("/attendance")) return "Student attendance retrieved successfully!";
+        if (path.endsWith("/invoices")) return "Student invoices retrieved successfully!";
+        if (path.endsWith("/certificates")) return "Student certificates retrieved successfully!";
+        if (path.endsWith("/resources")) return "Student resources retrieved successfully!";
+        if (path.endsWith("/profile")) return "Student profile retrieved successfully!";
+        return "Student portal data retrieved successfully!";
     }
 }
