@@ -122,6 +122,11 @@ public class FeeStructureService {
         return FeeStructureResponse.from(feeStructureRepository.save(feeStructure));
     }
 
+    public void delete(Integer feeId) {
+        getFeeStructure(feeId);
+        feeStructureRepository.deleteById(feeId);
+    }
+
     private FeeStructure getFeeStructure(Integer feeId) {
         return feeStructureRepository.findById(feeId)
                 .orElseThrow(() -> new FeeStructureNotFoundException(feeId));

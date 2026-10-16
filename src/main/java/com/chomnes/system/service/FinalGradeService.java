@@ -1,12 +1,16 @@
 package com.chomnes.system.service;
 
 import com.chomnes.system.dto.ComputeFinalGradeRequest;
+import com.chomnes.system.dto.CreateFinalGradeRequest;
 import com.chomnes.system.dto.FinalGradeResponse;
+import com.chomnes.system.dto.UpdateFinalGradeRequest;
 import com.chomnes.system.exception.FinalGradeConflictException;
 import com.chomnes.system.exception.FinalGradeNotFoundException;
 import com.chomnes.system.exception.ScheduleNotFoundException;
 import com.chomnes.system.exception.SchoolClassNotFoundException;
 import com.chomnes.system.exception.StudentNotFoundException;
+import com.chomnes.system.exception.SubjectNotFoundException;
+import com.chomnes.system.exception.SemesterNotFoundException;
 import com.chomnes.system.model.Assessment;
 import com.chomnes.system.model.FinalGrade;
 import com.chomnes.system.model.Grade;
@@ -24,6 +28,8 @@ import com.chomnes.system.repository.GradingCriterionRepository;
 import com.chomnes.system.repository.ScheduleRepository;
 import com.chomnes.system.repository.SchoolClassRepository;
 import com.chomnes.system.repository.StudentRepository;
+import com.chomnes.system.repository.SubjectRepository;
+import com.chomnes.system.repository.SemesterRepository;
 import com.chomnes.system.repository.TeacherRepository;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -48,6 +54,8 @@ public class FinalGradeService {
     private final GradingCriterionRepository criterionRepository;
     private final ClassEnrollmentRepository enrollmentRepository;
     private final TeacherRepository teacherRepository;
+    private final SubjectRepository subjectRepository;
+    private final SemesterRepository semesterRepository;
 
     public FinalGradeService(
             FinalGradeRepository finalGradeRepository,
@@ -58,7 +66,9 @@ public class FinalGradeService {
             GradeRepository gradeRepository,
             GradingCriterionRepository criterionRepository,
             ClassEnrollmentRepository enrollmentRepository,
-            TeacherRepository teacherRepository
+            TeacherRepository teacherRepository,
+            SubjectRepository subjectRepository,
+            SemesterRepository semesterRepository
     ) {
         this.finalGradeRepository = finalGradeRepository;
         this.studentRepository = studentRepository;
@@ -69,6 +79,8 @@ public class FinalGradeService {
         this.criterionRepository = criterionRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.teacherRepository = teacherRepository;
+        this.subjectRepository = subjectRepository;
+        this.semesterRepository = semesterRepository;
     }
 
     @Transactional(readOnly = true)
@@ -212,6 +224,57 @@ public class FinalGradeService {
         finalGrade.setFinalScore(finalScore);
         finalGrade.setComputedAt(LocalDateTime.now());
         return FinalGradeResponse.from(finalGradeRepository.save(finalGrade));
+    }
+
+    public FinalGradeResponse create(CreateFinalGradeRequest request, Integer requesterId, User.Role requesterRole) {
+        if (requesterRole != User.Role.Admin) {
+            throw new AccessDeniedException("Only an administrator can create a final grade directly.");
+        }
+        validateReferences(request.studentId(), request.subjectId(), request.classId(), request.semesterId());
+        if (finalGradeRepository.findByStudentIdAndSubjectIdAndSemesterId(
+                request.studentId(), request.subjectId(), request.semesterId()).isPresent()) {
+            throw new FinalGradeConflictException("A final grade already exists for this student, subject, and semester.");
+        }
+        FinalGrade grade = new FinalGrade(
+                request.studentId(), request.subjectId(), request.classId(), request.semesterId(), request.finalScore()
+        );
+        grade.setLetterGrade(request.letterGrade());
+        grade.setGpaPoints(request.gpaPoints());
+        return FinalGradeResponse.from(finalGradeRepository.save(grade));
+    }
+
+    public FinalGradeResponse update(Integer finalGradeId, UpdateFinalGradeRequest request) {
+        if (request.isEmpty()) throw new IllegalArgumentException("Provide at least one final grade field to update.");
+        FinalGrade grade = getFinalGrade(finalGradeId);
+        Integer studentId = request.studentId() == null ? grade.getStudentId() : request.studentId();
+        Integer subjectId = request.subjectId() == null ? grade.getSubjectId() : request.subjectId();
+        Integer classId = request.classId() == null ? grade.getClassId() : request.classId();
+        Integer semesterId = request.semesterId() == null ? grade.getSemesterId() : request.semesterId();
+        validateReferences(studentId, subjectId, classId, semesterId);
+        if (finalGradeRepository.existsByStudentIdAndSubjectIdAndSemesterIdAndFinalGradeIdNot(
+                studentId, subjectId, semesterId, finalGradeId)) {
+            throw new FinalGradeConflictException("A final grade already exists for this student, subject, and semester.");
+        }
+        grade.setStudentId(studentId);
+        grade.setSubjectId(subjectId);
+        grade.setClassId(classId);
+        grade.setSemesterId(semesterId);
+        if (request.finalScore() != null) grade.setFinalScore(request.finalScore());
+        if (request.letterGrade() != null) grade.setLetterGrade(request.letterGrade());
+        if (request.gpaPoints() != null) grade.setGpaPoints(request.gpaPoints());
+        return FinalGradeResponse.from(finalGradeRepository.save(grade));
+    }
+
+    private void validateReferences(Integer studentId, Integer subjectId, Integer classId, Integer semesterId) {
+        if (!studentRepository.existsById(studentId)) throw new StudentNotFoundException(studentId);
+        if (!subjectRepository.existsById(subjectId)) throw new SubjectNotFoundException(subjectId);
+        if (!schoolClassRepository.existsById(classId)) throw new SchoolClassNotFoundException(classId);
+        if (!semesterRepository.existsById(semesterId)) throw new SemesterNotFoundException(semesterId);
+    }
+
+    public void delete(Integer finalGradeId) {
+        getFinalGrade(finalGradeId);
+        finalGradeRepository.deleteById(finalGradeId);
     }
 
     private FinalGrade getFinalGrade(Integer finalGradeId) {

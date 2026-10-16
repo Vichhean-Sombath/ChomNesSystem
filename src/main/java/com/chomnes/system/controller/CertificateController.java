@@ -10,6 +10,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,9 +20,10 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/certificates")
+@RequestMapping({"/api/certificates", "/certificate"})
 public class CertificateController {
     private final CertificateService certificateService;
 
@@ -29,12 +31,12 @@ public class CertificateController {
         this.certificateService = certificateService;
     }
 
-    @GetMapping
+    @GetMapping({"", "/data"})
     public List<CertificateResponse> findAll(@AuthenticationPrincipal Jwt principal) {
         return certificateService.findAll(requesterId(principal), requesterRole(principal));
     }
 
-    @GetMapping("/{certificateId}")
+    @GetMapping({"/{certificateId}", "/data/{certificateId}"})
     public CertificateResponse findById(
             @PathVariable Integer certificateId,
             @AuthenticationPrincipal Jwt principal
@@ -42,7 +44,7 @@ public class CertificateController {
         return certificateService.findById(certificateId, requesterId(principal), requesterRole(principal));
     }
 
-    @PostMapping
+    @PostMapping({"", "/create"})
     public ResponseEntity<CertificateResponse> issue(
             @Valid @RequestBody CreateCertificateRequest request,
             @AuthenticationPrincipal Jwt principal
@@ -55,6 +57,12 @@ public class CertificateController {
                 .buildAndExpand(created.certificateId())
                 .toUri();
         return ResponseEntity.created(location).body(created);
+    }
+
+    @DeleteMapping({"/{certificateId}", "/delete/{certificateId}"})
+    public Map<String, String> delete(@PathVariable Integer certificateId) {
+        certificateService.delete(certificateId);
+        return Map.of("message", "deleted");
     }
 
     private Integer requesterId(Jwt principal) {

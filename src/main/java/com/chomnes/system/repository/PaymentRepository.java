@@ -13,4 +13,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
     List<Payment> findAllByInvoiceIdOrderByPaymentDateDescPaymentIdDesc(Integer invoiceId);
 
     boolean existsByPaymentMethodAndTransactionReference(String paymentMethod, String transactionReference);
+
+    boolean existsByTransactionReferenceAndPaymentIdNot(String transactionReference, Integer paymentId);
+
+    boolean existsByTransactionReference(String transactionReference);
 }

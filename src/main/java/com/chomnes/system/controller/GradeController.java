@@ -11,19 +11,22 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/grades")
+@RequestMapping({"/api/grades", "/grade"})
 public class GradeController {
     private final GradeService gradeService;
 
@@ -31,17 +34,20 @@ public class GradeController {
         this.gradeService = gradeService;
     }
 
-    @GetMapping
-    public List<GradeResponse> findAll(@AuthenticationPrincipal Jwt principal) {
-        return gradeService.findAll(requesterId(principal), requesterRole(principal));
+    @GetMapping({"", "/data"})
+    public List<GradeResponse> findAll(
+            @RequestParam(name = "assessment_id", required = false) Integer assessmentId,
+            @AuthenticationPrincipal Jwt principal
+    ) {
+        return gradeService.findAll(requesterId(principal), requesterRole(principal), assessmentId);
     }
 
-    @GetMapping("/{gradeId}")
+    @GetMapping({"/{gradeId}", "/data/{gradeId}"})
     public GradeResponse findById(@PathVariable Integer gradeId, @AuthenticationPrincipal Jwt principal) {
         return gradeService.findById(gradeId, requesterId(principal), requesterRole(principal));
     }
 
-    @PostMapping
+    @PostMapping({"", "/create"})
     public ResponseEntity<GradeResponse> create(
             @Valid @RequestBody CreateGradeRequest request,
             @AuthenticationPrincipal Jwt principal
@@ -54,13 +60,19 @@ public class GradeController {
         return ResponseEntity.created(location).body(created);
     }
 
-    @PutMapping("/{gradeId}")
+    @PutMapping({"/{gradeId}", "/update/{gradeId}"})
     public GradeResponse update(
             @PathVariable Integer gradeId,
             @Valid @RequestBody UpdateGradeRequest request,
             @AuthenticationPrincipal Jwt principal
     ) {
         return gradeService.update(gradeId, request, requesterId(principal), requesterRole(principal));
+    }
+
+    @DeleteMapping({"/{gradeId}", "/delete/{gradeId}"})
+    public Map<String, String> delete(@PathVariable Integer gradeId) {
+        gradeService.delete(gradeId);
+        return Map.of("message", "deleted");
     }
 
     private Integer requesterId(Jwt principal) {

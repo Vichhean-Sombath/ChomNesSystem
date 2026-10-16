@@ -104,6 +104,11 @@ public class GradingCriterionService {
         return GradingCriterionResponse.from(criterionRepository.save(criterion));
     }
 
+    public void delete(Integer criteriaId) {
+        getCriterion(criteriaId);
+        criterionRepository.deleteById(criteriaId);
+    }
+
     private GradingCriterion getCriterion(Integer criteriaId) {
         return criterionRepository.findById(criteriaId)
                 .orElseThrow(() -> new GradingCriterionNotFoundException(criteriaId));

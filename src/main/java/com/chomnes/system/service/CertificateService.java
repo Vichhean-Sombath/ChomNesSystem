@@ -78,6 +78,12 @@ public class CertificateService {
         return CertificateResponse.from(certificateRepository.save(certificate));
     }
 
+    public void delete(Integer certificateId) {
+        certificateRepository.findById(certificateId)
+                .orElseThrow(() -> new CertificateNotFoundException(certificateId));
+        certificateRepository.deleteById(certificateId);
+    }
+
     private Student getStudentForUser(Integer userId) {
         return studentRepository.findByUserId(userId)
                 .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));

@@ -158,6 +158,11 @@ public class AssessmentService {
         return AssessmentResponse.from(assessmentRepository.save(assessment));
     }
 
+    public void delete(Integer assessmentId) {
+        getAssessment(assessmentId);
+        assessmentRepository.deleteById(assessmentId);
+    }
+
     private Assessment getAssessment(Integer assessmentId) {
         return assessmentRepository.findById(assessmentId)
                 .orElseThrow(() -> new AssessmentNotFoundException(assessmentId));

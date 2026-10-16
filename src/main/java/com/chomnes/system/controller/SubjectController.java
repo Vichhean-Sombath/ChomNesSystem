@@ -7,6 +7,7 @@ import com.chomnes.system.service.SubjectService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -17,9 +18,10 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/subjects")
+@RequestMapping({"/api/subjects", "/subject"})
 public class SubjectController {
     private final SubjectService subjectService;
 
@@ -27,17 +29,17 @@ public class SubjectController {
         this.subjectService = subjectService;
     }
 
-    @GetMapping
+    @GetMapping({"", "/data"})
     public List<SubjectResponse> findAll() {
         return subjectService.findAll();
     }
 
-    @GetMapping("/{subjectId}")
+    @GetMapping({"/{subjectId}", "/data/{subjectId}"})
     public SubjectResponse findById(@PathVariable Integer subjectId) {
         return subjectService.findById(subjectId);
     }
 
-    @PostMapping
+    @PostMapping({"", "/create"})
     public ResponseEntity<SubjectResponse> create(@Valid @RequestBody CreateSubjectRequest request) {
         SubjectResponse created = subjectService.create(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
@@ -47,11 +49,17 @@ public class SubjectController {
         return ResponseEntity.created(location).body(created);
     }
 
-    @PutMapping("/{subjectId}")
+    @PutMapping({"/{subjectId}", "/update/{subjectId}"})
     public SubjectResponse update(
             @PathVariable Integer subjectId,
             @Valid @RequestBody UpdateSubjectRequest request
     ) {
         return subjectService.update(subjectId, request);
+    }
+
+    @DeleteMapping({"/{subjectId}", "/delete/{subjectId}"})
+    public Map<String, String> delete(@PathVariable Integer subjectId) {
+        subjectService.delete(subjectId);
+        return Map.of("message", "deleted");
     }
 }

@@ -13,6 +13,13 @@ public interface FinalGradeRepository extends JpaRepository<FinalGrade, Integer>
             Integer semesterId
     );
 
+    boolean existsByStudentIdAndSubjectIdAndSemesterIdAndFinalGradeIdNot(
+            Integer studentId,
+            Integer subjectId,
+            Integer semesterId,
+            Integer finalGradeId
+    );
+
     List<FinalGrade> findAllByOrderByComputedAtDescFinalGradeIdDesc();
 
     List<FinalGrade> findAllByStudentIdOrderByComputedAtDescFinalGradeIdDesc(Integer studentId);

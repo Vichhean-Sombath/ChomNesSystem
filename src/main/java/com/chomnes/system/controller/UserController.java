@@ -16,13 +16,15 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping({"/api/users", "/user"})
 public class UserController {
     private final UserService userService;
 
@@ -43,9 +45,12 @@ public class UserController {
         return userService.findById(userId, requesterId(principal), isAdministrator(principal));
     }
 
-    @PostMapping
-    public ResponseEntity<UserResponse> create(@Valid @RequestBody CreateUserRequest request) {
-        UserResponse created = userService.create(request);
+    @PostMapping({"", "/create"})
+    public ResponseEntity<UserResponse> create(
+            @Valid @RequestBody CreateUserRequest request,
+            HttpServletRequest servletRequest
+    ) {
+        UserResponse created = userService.create(request, servletRequest.getRequestURI().startsWith("/user/"));
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{userId}")
                 .buildAndExpand(created.userId())
@@ -53,7 +58,7 @@ public class UserController {
         return ResponseEntity.created(location).body(created);
     }
 
-    @PutMapping("/{userId}")
+    @PutMapping({"/{userId}", "/update/{userId}"})
     public UserResponse update(
             @PathVariable("userId") Integer userId,
             @Valid @RequestBody UpdateUserRequest request,
@@ -62,13 +67,22 @@ public class UserController {
         return userService.update(userId, request, requesterId(principal), isAdministrator(principal));
     }
 
-    @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> deactivate(
+    @DeleteMapping({"/{userId}", "/disable/{userId}"})
+    public Object deactivate(
             @PathVariable("userId") Integer userId,
-            @AuthenticationPrincipal Jwt principal
+            @AuthenticationPrincipal Jwt principal,
+            HttpServletRequest servletRequest
     ) {
-        userService.deactivate(userId, requesterId(principal));
+        UserResponse deactivated = userService.deactivate(userId, requesterId(principal));
+        if (servletRequest.getRequestURI().startsWith("/user/disable/")) {
+            return deactivated;
+        }
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/enable/{userId}")
+    public UserResponse activate(@PathVariable Integer userId) {
+        return userService.activate(userId);
     }
 
     private Integer requesterId(Jwt principal) {

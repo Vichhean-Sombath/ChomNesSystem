@@ -88,6 +88,11 @@ public class SemesterService {
         return SemesterResponse.from(semesterRepository.save(semester));
     }
 
+    public void delete(Integer semesterId) {
+        getSemester(semesterId);
+        semesterRepository.deleteById(semesterId);
+    }
+
     private Semester getSemester(Integer semesterId) {
         return semesterRepository.findById(semesterId)
                 .orElseThrow(() -> new SemesterNotFoundException(semesterId));

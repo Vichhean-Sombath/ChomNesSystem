@@ -55,8 +55,14 @@ public class GradeService {
 
     @Transactional(readOnly = true)
     public List<GradeResponse> findAll(Integer requesterId, User.Role requesterRole) {
+        return findAll(requesterId, requesterRole, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<GradeResponse> findAll(Integer requesterId, User.Role requesterRole, Integer assessmentId) {
         if (requesterRole == User.Role.Admin) {
             return gradeRepository.findAllByOrderByEnteredAtDescGradeIdDesc().stream()
+                    .filter(grade -> assessmentId == null || assessmentId.equals(grade.getAssessmentId()))
                     .map(GradeResponse::from)
                     .toList();
         }
@@ -65,6 +71,7 @@ public class GradeService {
             return gradeRepository.findAllByStudentIdAndIsPublishedTrueOrderByEnteredAtDescGradeIdDesc(
                             student.getStudentId()
                     ).stream()
+                    .filter(grade -> assessmentId == null || assessmentId.equals(grade.getAssessmentId()))
                     .map(GradeResponse::from)
                     .toList();
         }
@@ -79,7 +86,9 @@ public class GradeService {
                             .stream()
                             .map(Assessment::getAssessmentId)
                             .toList();
-            return gradesForAssessments(assessmentIds);
+            return gradesForAssessments(assessmentIds).stream()
+                    .filter(grade -> assessmentId == null || assessmentId.equals(grade.assessmentId()))
+                    .toList();
         }
         throw new AccessDeniedException("You cannot access grades.");
     }
@@ -145,6 +154,11 @@ public class GradeService {
         return gradeRepository.findAllByAssessmentIdInOrderByEnteredAtDescGradeIdDesc(assessmentIds).stream()
                 .map(GradeResponse::from)
                 .toList();
+    }
+
+    public void delete(Integer gradeId) {
+        getGrade(gradeId);
+        gradeRepository.deleteById(gradeId);
     }
 
     private Grade getGrade(Integer gradeId) {

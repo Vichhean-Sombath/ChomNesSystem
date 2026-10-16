@@ -231,6 +231,11 @@ public class AttendanceRecordService {
         }
     }
 
+    public void delete(Integer attendanceId) {
+        getAttendanceRecord(attendanceId);
+        attendanceRepository.deleteById(attendanceId);
+    }
+
     private AttendanceRecord getAttendanceRecord(Integer attendanceId) {
         return attendanceRepository.findById(attendanceId)
                 .orElseThrow(() -> new AttendanceRecordNotFoundException(attendanceId));

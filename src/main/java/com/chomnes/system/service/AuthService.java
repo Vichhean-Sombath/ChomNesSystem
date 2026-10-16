@@ -5,11 +5,14 @@ import com.chomnes.system.dto.ChangePasswordRequest;
 import com.chomnes.system.dto.CreateUserRequest;
 import com.chomnes.system.dto.LoginRequest;
 import com.chomnes.system.dto.LoginResponse;
+import com.chomnes.system.dto.ScholarisAuthResponse;
 import com.chomnes.system.dto.UserResponse;
 import com.chomnes.system.exception.AdminBootstrapCompleteException;
 import com.chomnes.system.exception.InvalidCredentialsException;
 import com.chomnes.system.model.User;
 import com.chomnes.system.repository.UserRepository;
+import com.chomnes.system.repository.StudentRepository;
+import com.chomnes.system.repository.TeacherRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,6 +38,8 @@ public class AuthService {
     private static final String TOKEN_ISSUER = "chomnes-system";
 
     private final UserRepository userRepository;
+    private final StudentRepository studentRepository;
+    private final TeacherRepository teacherRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtEncoder jwtEncoder;
     private final UserService userService;
@@ -43,6 +48,8 @@ public class AuthService {
 
     public AuthService(
             UserRepository userRepository,
+            StudentRepository studentRepository,
+            TeacherRepository teacherRepository,
             PasswordEncoder passwordEncoder,
             JwtEncoder jwtEncoder,
             UserService userService,
@@ -50,6 +57,8 @@ public class AuthService {
             @Value("${app.auth.bootstrap-key:}") String bootstrapKey
     ) {
         this.userRepository = userRepository;
+        this.studentRepository = studentRepository;
+        this.teacherRepository = teacherRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtEncoder = jwtEncoder;
         this.userService = userService;
@@ -98,6 +107,10 @@ public class AuthService {
                 .claim("email", user.getEmail())
                 .claim("username", user.getUsername())
                 .claim("roles", List.of(user.getRole().name()))
+                .claim("student_id", studentRepository.findByUserId(user.getUserId())
+                        .map(student -> student.getStudentId()).orElse(null))
+                .claim("teacher_id", teacherRepository.findByUserId(user.getUserId())
+                        .map(teacher -> teacher.getTeacherId()).orElse(null))
                 .build();
 
         String token = jwtEncoder.encode(JwtEncoderParameters.from(
@@ -113,6 +126,26 @@ public class AuthService {
                 expirationMillis / 1000,
                 UserResponse.from(user)
         );
+    }
+
+    public ScholarisAuthResponse scholarisLogin(LoginRequest request) {
+        LoginResponse response = login(request);
+        Integer userId = response.user().userId();
+        Integer studentId = studentRepository.findByUserId(userId).map(student -> student.getStudentId()).orElse(null);
+        Integer teacherId = teacherRepository.findByUserId(userId).map(teacher -> teacher.getTeacherId()).orElse(null);
+        return new ScholarisAuthResponse("Login successful!", response.accessToken(), new ScholarisAuthResponse.ScholarisUser(
+                userId, response.user().username(), response.user().email(), response.user().role(), response.user().status(),
+                teacherId, studentId
+        ));
+    }
+
+    public ScholarisAuthResponse register(CreateUserRequest request) {
+        if (request.role() == User.Role.Admin) {
+            throw new IllegalArgumentException("Public registration is limited to Teacher and Student accounts.");
+        }
+        userService.create(request, true);
+        ScholarisAuthResponse loginResponse = scholarisLogin(new LoginRequest(request.email(), request.password()));
+        return new ScholarisAuthResponse("Registration successful!", loginResponse.token(), loginResponse.user());
     }
 
     public void changePassword(Integer userId, ChangePasswordRequest request) {

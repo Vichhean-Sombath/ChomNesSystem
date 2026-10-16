@@ -98,6 +98,11 @@ public class SubjectService {
         return SubjectResponse.from(subjectRepository.save(subject));
     }
 
+    public void delete(Integer subjectId) {
+        getSubject(subjectId);
+        subjectRepository.deleteById(subjectId);
+    }
+
     private Subject getSubject(Integer subjectId) {
         return subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new SubjectNotFoundException(subjectId));

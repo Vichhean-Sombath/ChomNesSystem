@@ -82,6 +82,11 @@ public class AcademicYearService {
         return AcademicYearResponse.from(academicYearRepository.save(academicYear));
     }
 
+    public void delete(Integer academicYearId) {
+        getAcademicYear(academicYearId);
+        academicYearRepository.deleteById(academicYearId);
+    }
+
     private AcademicYear getAcademicYear(Integer academicYearId) {
         return academicYearRepository.findById(academicYearId)
                 .orElseThrow(() -> new AcademicYearNotFoundException(academicYearId));

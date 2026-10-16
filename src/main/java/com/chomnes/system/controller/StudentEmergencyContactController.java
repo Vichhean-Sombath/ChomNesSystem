@@ -24,7 +24,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/student-emergency-contacts")
+@RequestMapping({"/api/student-emergency-contacts", "/student-emergency-contact"})
 public class StudentEmergencyContactController {
     private final StudentEmergencyContactService contactService;
 
@@ -32,12 +32,12 @@ public class StudentEmergencyContactController {
         this.contactService = contactService;
     }
 
-    @GetMapping
+    @GetMapping({"", "/data"})
     public List<StudentEmergencyContactResponse> findAll(@AuthenticationPrincipal Jwt principal) {
         return contactService.findAll(requesterId(principal), requesterRole(principal));
     }
 
-    @GetMapping("/{contactId}")
+    @GetMapping({"/{contactId}", "/data/{contactId}"})
     public StudentEmergencyContactResponse findById(
             @PathVariable Integer contactId,
             @AuthenticationPrincipal Jwt principal
@@ -45,7 +45,7 @@ public class StudentEmergencyContactController {
         return contactService.findById(contactId, requesterId(principal), requesterRole(principal));
     }
 
-    @PostMapping
+    @PostMapping({"", "/create"})
     public ResponseEntity<StudentEmergencyContactResponse> create(
             @Valid @RequestBody CreateStudentEmergencyContactRequest request,
             @AuthenticationPrincipal Jwt principal
@@ -60,7 +60,7 @@ public class StudentEmergencyContactController {
         return ResponseEntity.created(location).body(created);
     }
 
-    @PutMapping("/{contactId}")
+    @PutMapping({"/{contactId}", "/update/{contactId}"})
     public StudentEmergencyContactResponse update(
             @PathVariable Integer contactId,
             @Valid @RequestBody UpdateStudentEmergencyContactRequest request,
@@ -69,7 +69,7 @@ public class StudentEmergencyContactController {
         return contactService.update(contactId, request, requesterId(principal), requesterRole(principal));
     }
 
-    @DeleteMapping("/{contactId}")
+    @DeleteMapping({"/{contactId}", "/delete/{contactId}"})
     public ResponseEntity<Void> delete(
             @PathVariable Integer contactId,
             @AuthenticationPrincipal Jwt principal

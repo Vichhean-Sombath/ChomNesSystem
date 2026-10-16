@@ -11,6 +11,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -21,9 +22,10 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/assessments")
+@RequestMapping({"/api/assessments", "/assessment"})
 public class AssessmentController {
     private final AssessmentService assessmentService;
 
@@ -31,12 +33,12 @@ public class AssessmentController {
         this.assessmentService = assessmentService;
     }
 
-    @GetMapping
+    @GetMapping({"", "/data"})
     public List<AssessmentResponse> findAll(@AuthenticationPrincipal Jwt principal) {
         return assessmentService.findAll(requesterId(principal), requesterRole(principal));
     }
 
-    @GetMapping("/{assessmentId}")
+    @GetMapping({"/{assessmentId}", "/data/{assessmentId}"})
     public AssessmentResponse findById(
             @PathVariable Integer assessmentId,
             @AuthenticationPrincipal Jwt principal
@@ -44,7 +46,7 @@ public class AssessmentController {
         return assessmentService.findById(assessmentId, requesterId(principal), requesterRole(principal));
     }
 
-    @PostMapping
+    @PostMapping({"", "/create"})
     public ResponseEntity<AssessmentResponse> create(
             @Valid @RequestBody CreateAssessmentRequest request,
             @AuthenticationPrincipal Jwt principal
@@ -61,7 +63,7 @@ public class AssessmentController {
         return ResponseEntity.created(location).body(created);
     }
 
-    @PutMapping("/{assessmentId}")
+    @PutMapping({"/{assessmentId}", "/update/{assessmentId}"})
     public AssessmentResponse update(
             @PathVariable Integer assessmentId,
             @Valid @RequestBody UpdateAssessmentRequest request,
@@ -73,6 +75,12 @@ public class AssessmentController {
                 requesterId(principal),
                 requesterRole(principal)
         );
+    }
+
+    @DeleteMapping({"/{assessmentId}", "/delete/{assessmentId}"})
+    public Map<String, String> delete(@PathVariable Integer assessmentId) {
+        assessmentService.delete(assessmentId);
+        return Map.of("message", "deleted");
     }
 
     private Integer requesterId(Jwt principal) {

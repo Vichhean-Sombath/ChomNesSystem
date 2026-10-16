@@ -119,6 +119,11 @@ public class ScheduleService {
         return ScheduleResponse.from(scheduleRepository.save(schedule));
     }
 
+    public void delete(Integer scheduleId) {
+        getSchedule(scheduleId);
+        scheduleRepository.deleteById(scheduleId);
+    }
+
     private Schedule getSchedule(Integer scheduleId) {
         return scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));

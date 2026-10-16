@@ -11,6 +11,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -21,9 +22,10 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/fee-structures")
+@RequestMapping({"/api/fee-structures", "/fee_structure"})
 public class FeeStructureController {
     private final FeeStructureService feeStructureService;
 
@@ -31,17 +33,17 @@ public class FeeStructureController {
         this.feeStructureService = feeStructureService;
     }
 
-    @GetMapping
+    @GetMapping({"", "/data"})
     public List<FeeStructureResponse> findAll(@AuthenticationPrincipal Jwt principal) {
         return feeStructureService.findAll(requesterId(principal), requesterRole(principal));
     }
 
-    @GetMapping("/{feeId}")
+    @GetMapping({"/{feeId}", "/data/{feeId}"})
     public FeeStructureResponse findById(@PathVariable Integer feeId, @AuthenticationPrincipal Jwt principal) {
         return feeStructureService.findById(feeId, requesterId(principal), requesterRole(principal));
     }
 
-    @PostMapping
+    @PostMapping({"", "/create"})
     public ResponseEntity<FeeStructureResponse> create(@Valid @RequestBody CreateFeeStructureRequest request) {
         FeeStructureResponse created = feeStructureService.create(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
@@ -51,12 +53,18 @@ public class FeeStructureController {
         return ResponseEntity.created(location).body(created);
     }
 
-    @PutMapping("/{feeId}")
+    @PutMapping({"/{feeId}", "/update/{feeId}"})
     public FeeStructureResponse update(
             @PathVariable Integer feeId,
             @Valid @RequestBody UpdateFeeStructureRequest request
     ) {
         return feeStructureService.update(feeId, request);
+    }
+
+    @DeleteMapping({"/{feeId}", "/delete/{feeId}"})
+    public Map<String, String> delete(@PathVariable Integer feeId) {
+        feeStructureService.delete(feeId);
+        return Map.of("message", "deleted");
     }
 
     private Integer requesterId(Jwt principal) {

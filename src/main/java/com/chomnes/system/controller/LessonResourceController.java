@@ -24,7 +24,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/lesson-resources")
+@RequestMapping({"/api/lesson-resources", "/lesson_resource"})
 public class LessonResourceController {
     private final LessonResourceService resourceService;
 
@@ -32,12 +32,12 @@ public class LessonResourceController {
         this.resourceService = resourceService;
     }
 
-    @GetMapping
+    @GetMapping({"", "/data"})
     public List<LessonResourceResponse> findAll(@AuthenticationPrincipal Jwt principal) {
         return resourceService.findAll(requesterId(principal), requesterRole(principal));
     }
 
-    @GetMapping("/{resourceId}")
+    @GetMapping({"/{resourceId}", "/data/{resourceId}"})
     public LessonResourceResponse findById(
             @PathVariable Integer resourceId,
             @AuthenticationPrincipal Jwt principal
@@ -45,7 +45,7 @@ public class LessonResourceController {
         return resourceService.findById(resourceId, requesterId(principal), requesterRole(principal));
     }
 
-    @PostMapping
+    @PostMapping({"", "/create"})
     public ResponseEntity<LessonResourceResponse> create(
             @Valid @RequestBody CreateLessonResourceRequest request,
             @AuthenticationPrincipal Jwt principal
@@ -60,7 +60,7 @@ public class LessonResourceController {
         return ResponseEntity.created(location).body(created);
     }
 
-    @PutMapping("/{resourceId}")
+    @PutMapping({"/{resourceId}", "/update/{resourceId}"})
     public LessonResourceResponse update(
             @PathVariable Integer resourceId,
             @Valid @RequestBody UpdateLessonResourceRequest request,
@@ -69,7 +69,7 @@ public class LessonResourceController {
         return resourceService.update(resourceId, request, requesterId(principal), requesterRole(principal));
     }
 
-    @DeleteMapping("/{resourceId}")
+    @DeleteMapping({"/{resourceId}", "/delete/{resourceId}"})
     public ResponseEntity<Void> delete(
             @PathVariable Integer resourceId,
             @AuthenticationPrincipal Jwt principal

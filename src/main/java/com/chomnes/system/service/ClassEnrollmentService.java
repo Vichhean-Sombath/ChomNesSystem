@@ -158,6 +158,11 @@ public class ClassEnrollmentService {
         }
     }
 
+    public void delete(Integer enrollmentId) {
+        getEnrollment(enrollmentId);
+        enrollmentRepository.deleteById(enrollmentId);
+    }
+
     private ClassEnrollment getEnrollment(Integer enrollmentId) {
         return enrollmentRepository.findById(enrollmentId)
                 .orElseThrow(() -> new ClassEnrollmentNotFoundException(enrollmentId));

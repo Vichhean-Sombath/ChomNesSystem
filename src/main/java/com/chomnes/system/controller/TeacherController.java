@@ -25,7 +25,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/teachers")
+@RequestMapping({"/api/teachers", "/teacher"})
 public class TeacherController {
     private final TeacherService teacherService;
 
@@ -33,12 +33,12 @@ public class TeacherController {
         this.teacherService = teacherService;
     }
 
-    @GetMapping
+    @GetMapping({"", "/data"})
     public List<TeacherResponse> findAll() {
         return teacherService.findAll();
     }
 
-    @GetMapping("/{teacherId}")
+    @GetMapping({"/{teacherId}", "/data/{teacherId}"})
     public TeacherResponse findById(
             @PathVariable("teacherId") Integer teacherId,
             @AuthenticationPrincipal Jwt principal
@@ -56,7 +56,7 @@ public class TeacherController {
         return ResponseEntity.created(location).body(created);
     }
 
-    @PutMapping("/{teacherId}")
+    @PutMapping({"/{teacherId}", "/update/{teacherId}"})
     public TeacherResponse update(
             @PathVariable("teacherId") Integer teacherId,
             @Valid @RequestBody UpdateTeacherRequest request,

@@ -125,6 +125,11 @@ public class SchoolClassService {
         return SchoolClassResponse.from(schoolClassRepository.save(schoolClass));
     }
 
+    public void delete(Integer classId) {
+        getSchoolClass(classId);
+        schoolClassRepository.deleteById(classId);
+    }
+
     private SchoolClass getSchoolClass(Integer classId) {
         return schoolClassRepository.findById(classId)
                 .orElseThrow(() -> new SchoolClassNotFoundException(classId));

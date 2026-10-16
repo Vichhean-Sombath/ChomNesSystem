@@ -7,6 +7,7 @@ import com.chomnes.system.service.TimeSlotService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -17,9 +18,10 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/time-slots")
+@RequestMapping({"/api/time-slots", "/time-slot"})
 public class TimeSlotController {
     private final TimeSlotService timeSlotService;
 
@@ -27,17 +29,17 @@ public class TimeSlotController {
         this.timeSlotService = timeSlotService;
     }
 
-    @GetMapping
+    @GetMapping({"", "/data"})
     public List<TimeSlotResponse> findAll() {
         return timeSlotService.findAll();
     }
 
-    @GetMapping("/{timeSlotId}")
+    @GetMapping({"/{timeSlotId}", "/data/{timeSlotId}"})
     public TimeSlotResponse findById(@PathVariable Integer timeSlotId) {
         return timeSlotService.findById(timeSlotId);
     }
 
-    @PostMapping
+    @PostMapping({"", "/create"})
     public ResponseEntity<TimeSlotResponse> create(@Valid @RequestBody CreateTimeSlotRequest request) {
         TimeSlotResponse created = timeSlotService.create(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
@@ -47,11 +49,17 @@ public class TimeSlotController {
         return ResponseEntity.created(location).body(created);
     }
 
-    @PutMapping("/{timeSlotId}")
+    @PutMapping({"/{timeSlotId}", "/update/{timeSlotId}"})
     public TimeSlotResponse update(
             @PathVariable Integer timeSlotId,
             @Valid @RequestBody UpdateTimeSlotRequest request
     ) {
         return timeSlotService.update(timeSlotId, request);
+    }
+
+    @DeleteMapping({"/{timeSlotId}", "/delete/{timeSlotId}"})
+    public Map<String, String> delete(@PathVariable Integer timeSlotId) {
+        timeSlotService.delete(timeSlotId);
+        return Map.of("message", "deleted");
     }
 }

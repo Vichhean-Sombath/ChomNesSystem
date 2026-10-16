@@ -6,6 +6,10 @@ import com.chomnes.system.dto.UserResponse;
 import com.chomnes.system.exception.DuplicateUserException;
 import com.chomnes.system.exception.UserNotFoundException;
 import com.chomnes.system.model.User;
+import com.chomnes.system.model.Student;
+import com.chomnes.system.model.Teacher;
+import com.chomnes.system.repository.StudentRepository;
+import com.chomnes.system.repository.TeacherRepository;
 import com.chomnes.system.repository.UserRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
@@ -16,15 +20,25 @@ import org.springframework.transaction.annotation.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
+import java.time.LocalDate;
 
 @Service
 @Transactional
 public class UserService {
     private final UserRepository userRepository;
+    private final StudentRepository studentRepository;
+    private final TeacherRepository teacherRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(
+            UserRepository userRepository,
+            StudentRepository studentRepository,
+            TeacherRepository teacherRepository,
+            PasswordEncoder passwordEncoder
+    ) {
         this.userRepository = userRepository;
+        this.studentRepository = studentRepository;
+        this.teacherRepository = teacherRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -44,9 +58,19 @@ public class UserService {
     }
 
     public UserResponse create(CreateUserRequest request) {
+        return create(request, false);
+    }
+
+    public UserResponse create(CreateUserRequest request, boolean createRoleProfile) {
         String username = request.username().trim();
         String email = normalizeEmail(request.email());
         ensureUnique(username, email, null);
+
+        if (createRoleProfile && (request.role() == User.Role.Student || request.role() == User.Role.Teacher)
+                && (request.firstName() == null || request.firstName().isBlank()
+                || request.lastName() == null || request.lastName().isBlank())) {
+            throw new IllegalArgumentException("First name and last name are required for student and teacher accounts.");
+        }
 
         User user = new User(
                 username,
@@ -54,7 +78,21 @@ public class UserService {
                 hashPassword(request.password()),
                 request.role()
         );
-        return UserResponse.from(userRepository.save(user));
+        User savedUser = userRepository.save(user);
+        if (createRoleProfile && request.role() == User.Role.Student) {
+            studentRepository.save(new Student(
+                    savedUser.getUserId(), request.firstName().trim(), request.lastName().trim(), request.dob(),
+                    request.gender(), request.photoUrl(), request.contactNumber(), request.address(),
+                    request.enrollmentDate() == null ? LocalDate.now() : request.enrollmentDate()
+            ));
+        } else if (createRoleProfile && request.role() == User.Role.Teacher) {
+            teacherRepository.save(new Teacher(
+                    savedUser.getUserId(), request.firstName().trim(), request.lastName().trim(), request.dob(),
+                    request.gender(), request.photoUrl(), request.contactNumber(), request.specialization(),
+                    request.bio(), LocalDate.now()
+            ));
+        }
+        return UserResponse.from(savedUser);
     }
 
     public UserResponse update(Integer userId, UpdateUserRequest request, Integer requesterId, boolean administrator) {
@@ -99,7 +137,7 @@ public class UserService {
         return UserResponse.from(userRepository.save(user));
     }
 
-    public void deactivate(Integer userId, Integer requesterId) {
+    public UserResponse deactivate(Integer userId, Integer requesterId) {
         User user = getUser(userId);
         if (requesterId.equals(userId)) {
             throw new AccessDeniedException("You cannot deactivate your own account.");
@@ -107,8 +145,20 @@ public class UserService {
         if (user.getRole() == User.Role.Admin) {
             throw new AccessDeniedException("An administrator account cannot be deactivated.");
         }
+        if (user.getStatus() == User.Status.Inactive) {
+            throw new IllegalArgumentException("User is already deactivated.");
+        }
         user.setStatus(User.Status.Inactive);
-        userRepository.save(user);
+        return UserResponse.from(userRepository.save(user));
+    }
+
+    public UserResponse activate(Integer userId) {
+        User user = getUser(userId);
+        if (user.getStatus() == User.Status.Active) {
+            throw new IllegalArgumentException("User is already active.");
+        }
+        user.setStatus(User.Status.Active);
+        return UserResponse.from(userRepository.save(user));
     }
 
     private void requireOwnerOrAdministrator(Integer userId, Integer requesterId, boolean administrator) {

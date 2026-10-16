@@ -16,6 +16,10 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Integer> {
 
     boolean existsByStudentIdAndFeeId(Integer studentId, Integer feeId);
 
+    boolean existsByInvoiceNumber(String invoiceNumber);
+
+    boolean existsByInvoiceNumberAndInvoiceIdNot(String invoiceNumber, Integer invoiceId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select invoice from Invoice invoice where invoice.invoiceId = :invoiceId")
     java.util.Optional<Invoice> findByIdForUpdate(@Param("invoiceId") Integer invoiceId);

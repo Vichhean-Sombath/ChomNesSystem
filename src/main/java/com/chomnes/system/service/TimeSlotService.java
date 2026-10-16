@@ -66,6 +66,11 @@ public class TimeSlotService {
         return TimeSlotResponse.from(timeSlotRepository.save(timeSlot));
     }
 
+    public void delete(Integer timeSlotId) {
+        getTimeSlot(timeSlotId);
+        timeSlotRepository.deleteById(timeSlotId);
+    }
+
     private TimeSlot getTimeSlot(Integer timeSlotId) {
         return timeSlotRepository.findById(timeSlotId)
                 .orElseThrow(() -> new TimeSlotNotFoundException(timeSlotId));
