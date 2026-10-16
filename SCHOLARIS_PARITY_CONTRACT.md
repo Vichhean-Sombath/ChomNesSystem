@@ -1,7 +1,7 @@
 # Scholaris API Feature Parity Contract
 
 **Stage:** 1 — Define the parity contract  
-**Status:** Stage 1 baseline recorded; Stage 2 management CRUD and Stage 3 Admin/student portal routes are implemented. Remaining response and workflow differences are listed below.
+**Status:** Stages 1–5 implemented for the tracked management, portal, attendance QR, dashboard, and reports scope. Payment-provider integrations, file delivery parity, notifications, and remaining populated-relation response differences are still open.
 **Reference:** `../ScholarisAPI` (local Scholaris API source and README).  
 **Target:** `ChomNesSystem` Spring Boot API.
 
@@ -51,7 +51,7 @@ The target is **API compatibility as well as feature parity**: expose the refere
 | Lesson resources | `GET /lesson_resource/data[/:id]`, create/update/delete (Admin/Teacher) | CRUD exists at `/api/lesson-resources`; reference paths are absent. Verify parity for file delivery and authorization. |
 | Emergency contacts | `GET /student-emergency-contact/data[/:id]`, create/update/delete (Admin) | CRUD exists at `/api/student-emergency-contacts`; student self-service permissions and reference paths differ. |
 | Admin dashboard | `GET /dashboard/summary` (Admin) | Implemented in Stage 3 with revenue ranges, monthly comparison, payment methods, invoice status, student enrollment trend, and recent payments. |
-| Admin reports | `GET /reports/summary` (Admin) | Absent. |
+| Admin reports | `GET /reports/summary` (Admin) | Implemented in Stage 5 with financial, enrollment, academic, and teacher workload summaries plus range and academic filters. |
 | Student portal | `GET /student/me/{summary,classes,schedule,grades,attendance,invoices,certificates,resources,profile}` and `POST /student/me/attendance/checkin` (Student) | Implemented in Stage 3; reads are scoped to the signed-in student's profile and active enrollments. Stage 4 upgrades check-in to schedule-bound signed QR tokens. |
 | Notifications | Optional email and Telegram notifications, especially payment events | Absent in Spring baseline. |
 
@@ -63,7 +63,7 @@ The Spring project now exposes the Scholaris management route stems and CRUD suf
 
 User registration creates its matching student or teacher profile; Scholaris login includes linked profile IDs; logout, password change, and administrator enable/disable routes are present. Repeated enable/disable requests return a client error, matching the reference lifecycle behavior.
 
-This stage closes management route coverage and adds invoice/payment/final-grade update and delete operations. It does **not** claim full management response parity yet: several Spring DTOs return related record IDs where Scholaris populates related objects, and SQL foreign-key restrictions can prevent deletes that MongoDB may allow. Provider payment flows and reports remain later stages.
+This stage closes management route coverage and adds invoice/payment/final-grade update and delete operations. It does **not** claim full management response parity yet: several Spring DTOs return related record IDs where Scholaris populates related objects, and SQL foreign-key restrictions can prevent deletes that MongoDB may allow. At this stage provider payment flows and reports remained future work; reports are now covered by Stage 5, while provider flows remain open.
 
 ## 5. Stage 3 implementation update — role-specific portals
 
@@ -71,7 +71,7 @@ This stage closes management route coverage and adds invoice/payment/final-grade
 
 Student portal data is derived from the authenticated user-to-student association; no student ID is accepted from the caller. Attendance check-in verifies that the student and enrollment are active, the schedule exists, the date is today, and a duplicate has not already been recorded. Stage 4 replaces the shared check-in token with a short-lived signed token bound to a specific schedule and attendance date.
 
-Admin reports at `/reports/summary` and payment-provider integrations remain future stages. Stage 3 implementation evidence is in `StudentPortalController.java`, `StudentPortalService.java`, `DashboardController.java`, `DashboardService.java`, `SecurityConfiguration.java`, and `ScholarisCompatibilityAdvice.java`.
+Stage 3 implementation evidence is in `StudentPortalController.java`, `StudentPortalService.java`, `DashboardController.java`, `DashboardService.java`, `SecurityConfiguration.java`, and `ScholarisCompatibilityAdvice.java`.
 
 ## 6. Stage 4 implementation update — attendance QR check-in
 
@@ -81,7 +81,13 @@ Admin users and the teacher assigned to a schedule can issue a signed QR token t
 
 Implementation evidence: `AttendanceQrController.java`, `AttendanceQrService.java`, `StudentPortalService.java`, `StudentAttendanceCheckInRequest.java`, `SecurityConfiguration.java`, and `application.properties`.
 
-## 7. Business behavior that must be preserved
+## 7. Stage 5 implementation update — dashboard and reports
+
+`GET /dashboard/summary` remains available to Admin users with the existing revenue summary. `GET /reports/summary` now returns the Scholaris response envelope and four report sections: financial, enrollment, academic, and teacher workload. It accepts `range` (`weekly`, `monthly`, or `yearly`, defaulting to monthly for other values), `academicYearId`, and `semesterId`; the academic filters are applied to matching report sections. Financial results include revenue trends, payment methods, collection metrics, and up to 50 outstanding invoice rows. Enrollment results include student trends/distributions and class capacity. Academic results include attendance and final-grade summaries. Teacher workload results include schedule density and per-teacher averages.
+
+The report is aggregated from the Spring/JPA datasets in memory. `ReportsController.java`, `ReportsService.java`, `SecurityConfiguration.java`, and `ScholarisCompatibilityAdvice.java` implement the route, Admin access, aggregation, and camelCase compatibility response. Payment-provider integrations and file-delivery parity remain outstanding.
+
+## 8. Business behavior that must be preserved
 
 1. **Authentication and account lifecycle:** login verifies credentials and returns user role plus linked `student_id`/`teacher_id`; registration only creates `Teacher` or `Student` accounts and creates the matching profile; logout and password change behave as in the reference; disabled accounts cannot continue authenticating; admins can re-enable them.
 2. **Authorization and ownership:** student portal and student payment operations use the authenticated student's own profile. A student cannot read or mutate another student's information by changing an ID in a request. Teacher/admin permissions remain route-specific as in the matrix.
@@ -91,18 +97,18 @@ Implementation evidence: `AttendanceQrController.java`, `AttendanceQrService.jav
 6. **Dashboard/reports:** return the same metrics and filter semantics as the reference. Reports accept `range`, `academicYearId`, and `semesterId` filters; dashboard supports its documented revenue range. Zero-data results remain valid and use stable response keys.
 7. **Files and notifications:** certificates and lesson resources must be retrievable artifacts with stable URLs or equivalent delivery; configured email/Telegram events follow the reference's optional behavior.
 
-## 8. Data model and intentional implementation difference
+## 9. Data model and intentional implementation difference
 
 The Spring Flyway migration and JPA entities map the same 22 core Scholaris tables (`users` through `student_emergency_contacts`). Scholaris's current server uses MongoDB/Mongoose while Spring uses SQL Server/JPA. This contract requires equivalent records and observable relationships, not identical storage engines or query implementation.
 
-## 9. Stage 1 completion criteria
+## 10. Stage 1 completion criteria
 
 - This document is the baseline checklist for subsequent implementation stages.
 - Each feature has a reference route/access entry and a Spring baseline status.
 - Later stages must update the status and link implementation evidence here; a feature is complete only when its behavior, access control, and response contract meet the relevant sections above.
 - Tests and client-level verification belong to implementation/release stages; this stage records the contract and does not claim runtime parity.
 
-## 10. Source basis
+## 11. Source basis
 
 - `../ScholarisAPI/README.md`
 - `../ScholarisAPI/server.js`
