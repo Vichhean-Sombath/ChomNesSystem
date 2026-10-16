@@ -5,7 +5,6 @@ import com.chomnes.system.exception.AttendanceRecordConflictException;
 import com.chomnes.system.exception.ScheduleNotFoundException;
 import com.chomnes.system.model.*;
 import com.chomnes.system.repository.*;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +39,7 @@ public class StudentPortalService {
     private final CertificateRepository certificates;
     private final LessonResourceRepository resources;
     private final StudentEmergencyContactRepository emergencyContacts;
-    private final String checkInToken;
+    private final AttendanceQrService attendanceQrService;
 
     public StudentPortalService(
             StudentRepository students,
@@ -63,7 +62,7 @@ public class StudentPortalService {
             CertificateRepository certificates,
             LessonResourceRepository resources,
             StudentEmergencyContactRepository emergencyContacts,
-            @Value("${app.attendance.checkin-token:}") String checkInToken
+            AttendanceQrService attendanceQrService
     ) {
         this.students = students;
         this.users = users;
@@ -85,7 +84,7 @@ public class StudentPortalService {
         this.certificates = certificates;
         this.resources = resources;
         this.emergencyContacts = emergencyContacts;
-        this.checkInToken = checkInToken;
+        this.attendanceQrService = attendanceQrService;
     }
 
     @Transactional(readOnly = true)
@@ -346,15 +345,12 @@ public class StudentPortalService {
     public Map<String, Object> checkIn(Integer userId, StudentAttendanceCheckInRequest request) {
         Student student = getStudent(userId);
         if (!"Active".equals(student.getStatus())) throw new AccessDeniedException("Inactive students cannot check in.");
-        if (checkInToken == null || checkInToken.isBlank()) {
-            throw new IllegalStateException("ATTENDANCE_CHECKIN_TOKEN is not configured.");
-        }
-        if (!checkInToken.equals(request.token())) throw new AccessDeniedException("Invalid check-in token.");
         if (!LocalDate.now().equals(request.attendanceDate())) {
             throw new IllegalArgumentException("Check-in is only allowed for today.");
         }
         Schedule schedule = schedules.findById(request.scheduleId())
                 .orElseThrow(() -> new ScheduleNotFoundException(request.scheduleId()));
+        attendanceQrService.verify(request.token(), request.scheduleId(), schedule.getClassId(), request.attendanceDate());
         if (!enrollments.existsByStudentIdAndClassIdAndStatusAndEnrollmentDateLessThanEqual(
                 student.getStudentId(), schedule.getClassId(), "Active", request.attendanceDate())) {
             throw new AccessDeniedException("You are not actively enrolled in this class.");

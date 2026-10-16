@@ -91,6 +91,9 @@ public class ScholarisCompatibilityAdvice extends RequestBodyAdviceAdapter
         if (path.equals("/dashboard/summary")) {
             return Map.of("message", "Dashboard summary retrieved successfully!", "data", body == null ? Map.of() : body);
         }
+        if (path.startsWith("/attendance-record/qr/")) {
+            return Map.of("message", "Attendance QR generated successfully!", "data", toSnakeCase(body));
+        }
         if (path.startsWith("/student/me/")) {
             return Map.of("message", studentPortalMessage(path), "data", body == null ? Map.of() : body);
         }

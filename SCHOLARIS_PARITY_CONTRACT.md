@@ -52,7 +52,7 @@ The target is **API compatibility as well as feature parity**: expose the refere
 | Emergency contacts | `GET /student-emergency-contact/data[/:id]`, create/update/delete (Admin) | CRUD exists at `/api/student-emergency-contacts`; student self-service permissions and reference paths differ. |
 | Admin dashboard | `GET /dashboard/summary` (Admin) | Implemented in Stage 3 with revenue ranges, monthly comparison, payment methods, invoice status, student enrollment trend, and recent payments. |
 | Admin reports | `GET /reports/summary` (Admin) | Absent. |
-| Student portal | `GET /student/me/{summary,classes,schedule,grades,attendance,invoices,certificates,resources,profile}` and `POST /student/me/attendance/checkin` (Student) | Implemented in Stage 3; reads are scoped to the signed-in student's profile and active enrollments. Check-in requires the configured attendance token. |
+| Student portal | `GET /student/me/{summary,classes,schedule,grades,attendance,invoices,certificates,resources,profile}` and `POST /student/me/attendance/checkin` (Student) | Implemented in Stage 3; reads are scoped to the signed-in student's profile and active enrollments. Stage 4 upgrades check-in to schedule-bound signed QR tokens. |
 | Notifications | Optional email and Telegram notifications, especially payment events | Absent in Spring baseline. |
 
 The reference CRUD route pattern is explicit per table above: where it says “create/update/delete,” those are respectively `POST /<resource>/create`, `PUT /<resource>/update/:id`, and `DELETE /<resource>/delete/:id` for the resource's displayed route stem.
@@ -69,11 +69,19 @@ This stage closes management route coverage and adds invoice/payment/final-grade
 
 `GET /dashboard/summary` is now available to Admin accounts with the reference `range` options (`weekly`, `monthly`, `yearly`) and summary fields. The student portal routes now cover summary, active classes, schedule, published grades and final grades, attendance history, invoices with payments and balances, certificates, class resources, and profile with emergency contacts. Portal responses preserve the reference's camelCase payload fields inside the standard response envelope.
 
-Student portal data is derived from the authenticated user-to-student association; no student ID is accepted from the caller. Attendance check-in verifies that the student and enrollment are active, the schedule exists, the date is today, the configured token matches, and a duplicate has not already been recorded. Configure `ATTENDANCE_CHECKIN_TOKEN` to enable check-in. The reference's configured shared token is supported; short-lived per-schedule QR issuance is not part of its route contract.
+Student portal data is derived from the authenticated user-to-student association; no student ID is accepted from the caller. Attendance check-in verifies that the student and enrollment are active, the schedule exists, the date is today, and a duplicate has not already been recorded. Stage 4 replaces the shared check-in token with a short-lived signed token bound to a specific schedule and attendance date.
 
 Admin reports at `/reports/summary` and payment-provider integrations remain future stages. Stage 3 implementation evidence is in `StudentPortalController.java`, `StudentPortalService.java`, `DashboardController.java`, `DashboardService.java`, `SecurityConfiguration.java`, and `ScholarisCompatibilityAdvice.java`.
 
-## 6. Business behavior that must be preserved
+## 6. Stage 4 implementation update — attendance QR check-in
+
+Admin users and the teacher assigned to a schedule can issue a signed QR token through `POST /attendance-record/qr/{scheduleId}` (also available at `POST /api/attendance-records/{scheduleId}/qr`). The response includes the compact token, schedule ID, attendance date, issue/expiry timestamps, and lifetime. The token is signed with the configured application JWT key and expires after `ATTENDANCE_QR_TTL_SECONDS` (default 120 seconds, maximum 900).
+
+`POST /student/me/attendance/checkin` now validates the signature, issuer, purpose, expiration, and exact schedule/date binding from the token before checking the student's active account, enrollment, current date, and duplicate attendance. It derives student identity from the access token and records `Present` attendance with the schedule's teacher as marker. This makes a QR token unusable for another schedule/date and prevents reuse after expiry. The old `ATTENDANCE_CHECKIN_TOKEN` shared secret is no longer required.
+
+Implementation evidence: `AttendanceQrController.java`, `AttendanceQrService.java`, `StudentPortalService.java`, `StudentAttendanceCheckInRequest.java`, `SecurityConfiguration.java`, and `application.properties`.
+
+## 7. Business behavior that must be preserved
 
 1. **Authentication and account lifecycle:** login verifies credentials and returns user role plus linked `student_id`/`teacher_id`; registration only creates `Teacher` or `Student` accounts and creates the matching profile; logout and password change behave as in the reference; disabled accounts cannot continue authenticating; admins can re-enable them.
 2. **Authorization and ownership:** student portal and student payment operations use the authenticated student's own profile. A student cannot read or mutate another student's information by changing an ID in a request. Teacher/admin permissions remain route-specific as in the matrix.
@@ -83,18 +91,18 @@ Admin reports at `/reports/summary` and payment-provider integrations remain fut
 6. **Dashboard/reports:** return the same metrics and filter semantics as the reference. Reports accept `range`, `academicYearId`, and `semesterId` filters; dashboard supports its documented revenue range. Zero-data results remain valid and use stable response keys.
 7. **Files and notifications:** certificates and lesson resources must be retrievable artifacts with stable URLs or equivalent delivery; configured email/Telegram events follow the reference's optional behavior.
 
-## 7. Data model and intentional implementation difference
+## 8. Data model and intentional implementation difference
 
 The Spring Flyway migration and JPA entities map the same 22 core Scholaris tables (`users` through `student_emergency_contacts`). Scholaris's current server uses MongoDB/Mongoose while Spring uses SQL Server/JPA. This contract requires equivalent records and observable relationships, not identical storage engines or query implementation.
 
-## 8. Stage 1 completion criteria
+## 9. Stage 1 completion criteria
 
 - This document is the baseline checklist for subsequent implementation stages.
 - Each feature has a reference route/access entry and a Spring baseline status.
 - Later stages must update the status and link implementation evidence here; a feature is complete only when its behavior, access control, and response contract meet the relevant sections above.
 - Tests and client-level verification belong to implementation/release stages; this stage records the contract and does not claim runtime parity.
 
-## 9. Source basis
+## 10. Source basis
 
 - `../ScholarisAPI/README.md`
 - `../ScholarisAPI/server.js`
