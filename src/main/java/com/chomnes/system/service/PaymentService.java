@@ -16,6 +16,8 @@ import com.chomnes.system.repository.PaymentRepository;
 import com.chomnes.system.repository.StudentRepository;
 import com.chomnes.system.repository.UserRepository;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,17 +32,23 @@ public class PaymentService {
     private final InvoiceRepository invoiceRepository;
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final String configuredSystemUserId;
 
     public PaymentService(
             PaymentRepository paymentRepository,
             InvoiceRepository invoiceRepository,
             StudentRepository studentRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            @Value("${app.payments.system-user-id:}") String configuredSystemUserId
     ) {
         this.paymentRepository = paymentRepository;
         this.invoiceRepository = invoiceRepository;
         this.studentRepository = studentRepository;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.configuredSystemUserId = configuredSystemUserId;
     }
 
     @Transactional(readOnly = true)
@@ -122,6 +130,78 @@ public class PaymentService {
         }
         invoiceRepository.save(invoice);
         return PaymentResponse.from(paymentRepository.save(payment));
+    }
+
+    /** Records a provider-confirmed charge exactly once and recalculates its invoice under a row lock. */
+    public PaymentResponse recordGatewayPayment(
+            Integer invoiceId,
+            BigDecimal amount,
+            String paymentMethod,
+            String transactionReference,
+            String receiptUrl
+    ) {
+        if (transactionReference == null || transactionReference.isBlank()) {
+            throw new IllegalArgumentException("A provider transaction reference is required.");
+        }
+        String normalizedMethod = normalizePaymentMethod(paymentMethod);
+        Payment prior = paymentRepository.findByTransactionReference(transactionReference).orElse(null);
+        if (prior != null) return existingProviderPayment(prior, invoiceId, amount, normalizedMethod);
+
+        Invoice invoice = invoiceRepository.findByIdForUpdate(invoiceId)
+                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
+        // A different invoice may have been updated while this provider request waited for its lock.
+        prior = paymentRepository.findByTransactionReference(transactionReference).orElse(null);
+        if (prior != null) return existingProviderPayment(prior, invoiceId, amount, normalizedMethod);
+        if (amount == null || amount.signum() <= 0) {
+            throw new PaymentConflictException("Provider payment amount must be greater than zero.");
+        }
+        BigDecimal remainingBalance = invoice.getTotalAmount().subtract(invoice.getAmountPaid());
+        if (remainingBalance.signum() <= 0 || amount.compareTo(remainingBalance) > 0) {
+            throw new PaymentConflictException("Provider payment does not match the invoice's remaining balance.");
+        }
+        Integer systemUserId = getSystemUserId();
+        BigDecimal newAmountPaid = invoice.getAmountPaid().add(amount);
+        invoice.setAmountPaid(newAmountPaid);
+        invoice.setStatus(newAmountPaid.compareTo(invoice.getTotalAmount()) >= 0 ? "Paid" : "Partial");
+        invoiceRepository.save(invoice);
+
+        Payment payment = new Payment(invoiceId, LocalDate.now(), amount, normalizedMethod,
+                receiptUrl, transactionReference, systemUserId,
+                "Auto-recorded via " + normalizedMethod + " gateway");
+        return PaymentResponse.from(paymentRepository.save(payment));
+    }
+
+    private PaymentResponse existingProviderPayment(
+            Payment prior,
+            Integer invoiceId,
+            BigDecimal amount,
+            String method
+    ) {
+        if (!invoiceId.equals(prior.getInvoiceId()) || !method.equals(prior.getPaymentMethod())
+                || amount == null || prior.getAmount().compareTo(amount) != 0) {
+            throw new PaymentConflictException("Provider transaction reference is already linked to another payment.");
+        }
+        return PaymentResponse.from(prior);
+    }
+
+    private Integer getSystemUserId() {
+        if (configuredSystemUserId != null && !configuredSystemUserId.isBlank()) {
+            try {
+                Integer id = Integer.valueOf(configuredSystemUserId);
+                if (userRepository.existsById(id)) return id;
+                throw new IllegalStateException("SYSTEM_USER_ID does not identify an existing user.");
+            } catch (NumberFormatException exception) {
+                throw new IllegalStateException("SYSTEM_USER_ID must be a valid user ID.", exception);
+            }
+        }
+        User automationUser = userRepository.findByUsername("system_automation").orElseGet(() -> {
+            String randomSecret = java.util.UUID.randomUUID() + java.util.UUID.randomUUID().toString();
+            User created = new User("system_automation", "system@chomnes.local",
+                    passwordEncoder.encode(randomSecret), User.Role.Admin);
+            created.setStatus(User.Status.Active);
+            return userRepository.save(created);
+        });
+        return automationUser.getUserId();
     }
 
     public PaymentResponse update(Integer paymentId, UpdatePaymentRequest request) {

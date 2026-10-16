@@ -17,4 +17,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
     boolean existsByTransactionReferenceAndPaymentIdNot(String transactionReference, Integer paymentId);
 
     boolean existsByTransactionReference(String transactionReference);
+
+    java.util.Optional<Payment> findByTransactionReference(String transactionReference);
 }

@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.math.RoundingMode;
 import java.util.List;
 
 @Service
@@ -109,6 +110,70 @@ public class BakongQrRequestService {
                 request.expiresAt()
         );
         return BakongQrRequestResponse.from(requestRepository.save(qrRequest));
+    }
+
+    @Transactional
+    public BakongQrRequestResponse createGenerated(
+            Integer invoiceId,
+            String md5,
+            BigDecimal amountKhr,
+            BigDecimal amountUsd,
+            LocalDateTime expiresAt,
+            Integer requesterId,
+            User.Role requesterRole
+    ) {
+        if (requesterRole != User.Role.Admin && requesterRole != User.Role.Student) {
+            throw new AccessDeniedException("Only an administrator or the invoice owner can create a Bakong QR request.");
+        }
+        Invoice invoice = invoiceRepository.findByIdForUpdate(invoiceId)
+                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
+        authorizeInvoiceOwner(invoice, requesterId, requesterRole);
+        BigDecimal remainingBalance = invoice.getTotalAmount().subtract(invoice.getAmountPaid());
+        if (remainingBalance.signum() <= 0 || amountUsd.signum() <= 0 || amountUsd.compareTo(remainingBalance) > 0) {
+            throw new BakongQrRequestConflictException("QR amount must be positive and cannot exceed the invoice's remaining balance.");
+        }
+        if (requestRepository.findByMd5(md5).isPresent()) {
+            throw new BakongQrRequestConflictException("This Bakong transaction hash is already associated with a request.");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        requestRepository.findAllByInvoiceIdAndStatus(invoiceId, "Pending").stream()
+                .filter(existing -> !existing.getExpiresAt().isAfter(now))
+                .forEach(existing -> existing.setStatus("Expired"));
+        if (requestRepository.existsByInvoiceIdAndStatus(invoiceId, "Pending")) {
+            throw new BakongQrRequestConflictException("A pending Bakong QR request already exists for this invoice.");
+        }
+        if (expiresAt == null || !expiresAt.isAfter(now)) {
+            throw new IllegalArgumentException("Bakong QR expiration must be in the future.");
+        }
+        BakongQrRequest saved = requestRepository.save(new BakongQrRequest(
+                invoiceId, md5, amountKhr.setScale(2, RoundingMode.HALF_UP),
+                amountUsd.setScale(2, RoundingMode.HALF_UP), expiresAt));
+        return BakongQrRequestResponse.from(saved);
+    }
+
+    @Transactional
+    public BakongQrRequest findByMd5ForRequester(String md5, Integer requesterId, User.Role requesterRole) {
+        BakongQrRequest request = requestRepository.findByMd5ForUpdate(md5)
+                .orElseThrow(() -> new BakongQrRequestNotFoundException(md5));
+        authorizeInvoiceOwner(request.getInvoiceId(), requesterId, requesterRole);
+        expireIfNeeded(request);
+        return request;
+    }
+
+    @Transactional(readOnly = true)
+    public BakongQrRequest findByMd5(String md5) {
+        return requestRepository.findByMd5(md5).orElse(null);
+    }
+
+    @Transactional
+    public BakongQrRequest markStatus(String md5, String status) {
+        BakongQrRequest request = requestRepository.findByMd5ForUpdate(md5)
+                .orElseThrow(() -> new BakongQrRequestNotFoundException(md5));
+        if ("Pending".equals(request.getStatus())) {
+            request.setStatus(status);
+            if ("Paid".equals(status)) request.setPaidAt(LocalDateTime.now());
+        }
+        return request;
     }
 
     private void authorizeInvoiceOwner(Integer invoiceId, Integer requesterId, User.Role requesterRole) {

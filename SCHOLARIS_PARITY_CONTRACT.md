@@ -1,7 +1,7 @@
 # Scholaris API Feature Parity Contract
 
 **Stage:** 1 — Define the parity contract  
-**Status:** Stages 1–5 implemented for the tracked management, portal, attendance QR, dashboard, and reports scope. Payment-provider integrations, file delivery parity, notifications, and remaining populated-relation response differences are still open.
+**Status:** Stages 1–6 implemented for the tracked management, portal, attendance QR, dashboard, reports, and payment-provider scope. File delivery parity, notifications, and remaining populated-relation response differences are still open.
 **Reference:** `../ScholarisAPI` (local Scholaris API source and README).  
 **Target:** `ChomNesSystem` Spring Boot API.
 
@@ -44,9 +44,9 @@ The target is **API compatibility as well as feature parity**: expose the refere
 | Final grades | `GET /final-grade/data[/:id]`, create/update/delete (Admin) | Read and compute exist at `/api/final-grades`; reference-compatible CRUD and update/delete are absent. |
 | Fee structures | `GET /fee_structure/data[/:id]`, create/update/delete (Admin) | Read/create/update exist at `/api/fee-structures`; delete is absent. |
 | Invoices | `GET /invoice/data[/:id]`, create/update/delete (Admin) | Read/create exist at `/api/invoices`; update/delete are absent. Student invoice self-service is also absent. |
-| Payments | Admin CRUD at `/payment/data[/:id]`, `/payment/create`, `/payment/update/:id`, `/payment/delete/:id`; provider routes below | Admin read/create exist at `/api/payments`; update/delete and payment-provider flows are absent. |
-| Stripe | `GET /payment/stripe/config` (public); `POST /payment/stripe/checkout` and `/verify` (Admin/Student); `GET /payment/stripe/success` and `/cancel` (provider redirect); `POST /payment/stripe/webhook` (signature-verified provider callback); `POST /payment/stripe/record` (Admin/Student) | Absent. |
-| Bakong | `POST /payment/bakong/qr` and `/verify` (Admin/Student); `GET /payment/bakong/account` (Admin); `POST /payment/bakong/webhook` (provider callback) | Partial storage API at `/api/bakong-qr-requests`; actual KHQR generation, provider verification, account check, and callback handling are absent. |
+| Payments | Admin CRUD at `/payment/data[/:id]`, `/payment/create`, `/payment/update/:id`, `/payment/delete/:id`; provider routes below | Implemented with provider-confirmed, idempotent payment recording; ordinary payment CRUD remains available. |
+| Stripe | `GET /payment/stripe/config` (public); `POST /payment/stripe/checkout` and `/verify` (Admin/Student); `GET /payment/stripe/success` and `/cancel` (provider redirect); `POST /payment/stripe/webhook` (signature-verified provider callback); `POST /payment/stripe/record` (Admin/Student) | Implemented with Checkout Sessions, raw-body signature verification, session ownership/amount validation, webhook processing, and duplicate-event safety. The record route requires a Stripe `session_id` and verifies it before recording. |
+| Bakong | `POST /payment/bakong/qr` and `/verify` (Admin/Student); `GET /payment/bakong/account` (Admin); `POST /payment/bakong/webhook` (provider callback) | Implemented with NBC KHQR generation, authenticated Open API transaction/account checks, amount and merchant validation, expiry, and idempotent recording. |
 | Certificates | `GET /certificate/data[/:id]`, `POST /certificate/create`, `DELETE /certificate/delete/:id` (Admin) | Metadata read/create at `/api/certificates`; delete and student self-service/file behavior are absent. |
 | Lesson resources | `GET /lesson_resource/data[/:id]`, create/update/delete (Admin/Teacher) | CRUD exists at `/api/lesson-resources`; reference paths are absent. Verify parity for file delivery and authorization. |
 | Emergency contacts | `GET /student-emergency-contact/data[/:id]`, create/update/delete (Admin) | CRUD exists at `/api/student-emergency-contacts`; student self-service permissions and reference paths differ. |
@@ -63,7 +63,7 @@ The Spring project now exposes the Scholaris management route stems and CRUD suf
 
 User registration creates its matching student or teacher profile; Scholaris login includes linked profile IDs; logout, password change, and administrator enable/disable routes are present. Repeated enable/disable requests return a client error, matching the reference lifecycle behavior.
 
-This stage closes management route coverage and adds invoice/payment/final-grade update and delete operations. It does **not** claim full management response parity yet: several Spring DTOs return related record IDs where Scholaris populates related objects, and SQL foreign-key restrictions can prevent deletes that MongoDB may allow. At this stage provider payment flows and reports remained future work; reports are now covered by Stage 5, while provider flows remain open.
+This stage closes management route coverage and adds invoice/payment/final-grade update and delete operations. It does **not** claim full management response parity yet: several Spring DTOs return related record IDs where Scholaris populates related objects, and SQL foreign-key restrictions can prevent deletes that MongoDB may allow. At this stage provider payment flows and reports remained future work; reports are covered by Stage 5 and payment-provider flows by Stage 6.
 
 ## 5. Stage 3 implementation update — role-specific portals
 
@@ -85,9 +85,19 @@ Implementation evidence: `AttendanceQrController.java`, `AttendanceQrService.jav
 
 `GET /dashboard/summary` remains available to Admin users with the existing revenue summary. `GET /reports/summary` now returns the Scholaris response envelope and four report sections: financial, enrollment, academic, and teacher workload. It accepts `range` (`weekly`, `monthly`, or `yearly`, defaulting to monthly for other values), `academicYearId`, and `semesterId`; the academic filters are applied to matching report sections. Financial results include revenue trends, payment methods, collection metrics, and up to 50 outstanding invoice rows. Enrollment results include student trends/distributions and class capacity. Academic results include attendance and final-grade summaries. Teacher workload results include schedule density and per-teacher averages.
 
-The report is aggregated from the Spring/JPA datasets in memory. `ReportsController.java`, `ReportsService.java`, `SecurityConfiguration.java`, and `ScholarisCompatibilityAdvice.java` implement the route, Admin access, aggregation, and camelCase compatibility response. Payment-provider integrations and file-delivery parity remain outstanding.
+The report is aggregated from the Spring/JPA datasets in memory. `ReportsController.java`, `ReportsService.java`, `SecurityConfiguration.java`, and `ScholarisCompatibilityAdvice.java` implement the route, Admin access, aggregation, and camelCase compatibility response. File-delivery parity remains outstanding.
 
-## 8. Business behavior that must be preserved
+## 8. Stage 6 implementation update — payment integrations
+
+Stripe routes now create and retrieve Checkout Sessions through the Stripe API. Checkout prices use the invoice's current remaining USD balance. `verify` and the compatibility `record` route require a real Stripe session with paid status, USD currency, matching invoice/student metadata, and a valid remaining balance. The success route reports provider status but does not itself mark an invoice paid. The webhook endpoint receives the raw body, verifies `Stripe-Signature` with the configured webhook secret and timestamp tolerance, and processes completed/async-succeeded Checkout events.
+
+Bakong QR payments now use the National Bank of Cambodia KHQR Java SDK to generate an amount-bound KHR dynamic QR with a 30-minute expiry. The generated MD5 and amount are stored with the invoice. Verification polls Bakong Open API using the QR MD5, checks provider success, merchant destination, currency, amount, and expiry, then records the payment. Bakong callbacks are treated as notification hints and are confirmed against Bakong Open API before any invoice changes. Repeated provider calls reuse the existing payment; invoice locking and a filtered unique transaction-reference index protect against concurrent duplicate recording.
+
+Configure these environment variables where the corresponding provider is enabled: `STRIPE_SECRET_KEY`, `STRIPE_PUBLIC_KEY`, `STRIPE_WEBHOOK_SECRET`, `SERVER_URL`; and `BAKONG_ACCOUNT_ID`, `MERCHANT_NAME`, `MERCHANT_CITY`, `MERCHANT_PHONE`, optional `STORE_LABEL`, `BAKONG_API_URL`, `BAKONG_API_TOKEN`, `BAKONG_API_ENABLED`, and optional `BAKONG_KHR_PER_USD` (default 4000). `SYSTEM_USER_ID` may point to an existing system account; if omitted, the service creates a locked-down automation account with a random inaccessible password to associate provider payments.
+
+Implementation evidence: `PaymentIntegrationController.java`, `PaymentIntegrationService.java`, `StripeProviderClient.java`, `BakongProviderClient.java`, `PaymentService.java`, `BakongQrRequestService.java`, `SecurityConfiguration.java`, `ScholarisCompatibilityAdvice.java`, and `V2__enforce_payment_transaction_idempotency.sql`.
+
+## 9. Business behavior that must be preserved
 
 1. **Authentication and account lifecycle:** login verifies credentials and returns user role plus linked `student_id`/`teacher_id`; registration only creates `Teacher` or `Student` accounts and creates the matching profile; logout and password change behave as in the reference; disabled accounts cannot continue authenticating; admins can re-enable them.
 2. **Authorization and ownership:** student portal and student payment operations use the authenticated student's own profile. A student cannot read or mutate another student's information by changing an ID in a request. Teacher/admin permissions remain route-specific as in the matrix.
@@ -97,18 +107,18 @@ The report is aggregated from the Spring/JPA datasets in memory. `ReportsControl
 6. **Dashboard/reports:** return the same metrics and filter semantics as the reference. Reports accept `range`, `academicYearId`, and `semesterId` filters; dashboard supports its documented revenue range. Zero-data results remain valid and use stable response keys.
 7. **Files and notifications:** certificates and lesson resources must be retrievable artifacts with stable URLs or equivalent delivery; configured email/Telegram events follow the reference's optional behavior.
 
-## 9. Data model and intentional implementation difference
+## 10. Data model and intentional implementation difference
 
 The Spring Flyway migration and JPA entities map the same 22 core Scholaris tables (`users` through `student_emergency_contacts`). Scholaris's current server uses MongoDB/Mongoose while Spring uses SQL Server/JPA. This contract requires equivalent records and observable relationships, not identical storage engines or query implementation.
 
-## 10. Stage 1 completion criteria
+## 11. Stage 1 completion criteria
 
 - This document is the baseline checklist for subsequent implementation stages.
 - Each feature has a reference route/access entry and a Spring baseline status.
 - Later stages must update the status and link implementation evidence here; a feature is complete only when its behavior, access control, and response contract meet the relevant sections above.
 - Tests and client-level verification belong to implementation/release stages; this stage records the contract and does not claim runtime parity.
 
-## 11. Source basis
+## 12. Source basis
 
 - `../ScholarisAPI/README.md`
 - `../ScholarisAPI/server.js`

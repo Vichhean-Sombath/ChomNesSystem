@@ -42,7 +42,7 @@ public class ScholarisCompatibilityAdvice extends RequestBodyAdviceAdapter
             Type targetType,
             Class<? extends HttpMessageConverter<?>> converterType
     ) {
-        return isCompatibilityRequest() && methodParameter.hasParameterAnnotation(
+        return isCompatibilityRequest() && !isPaymentWebhook() && methodParameter.hasParameterAnnotation(
                 org.springframework.web.bind.annotation.RequestBody.class
         );
     }
@@ -88,6 +88,28 @@ public class ScholarisCompatibilityAdvice extends RequestBodyAdviceAdapter
 
         String method = request.getMethod();
         String path = request.getRequestURI();
+        if (isPaymentWebhook()) return body;
+        if (path.equals("/payment/stripe/cancel")) return Map.of("message", "Payment cancelled by user.");
+        if (path.startsWith("/payment/stripe/")) {
+            String message = switch (path) {
+                case "/payment/stripe/config" -> "Stripe public key retrieved.";
+                case "/payment/stripe/checkout" -> "Stripe checkout session created.";
+                case "/payment/stripe/success" -> "Payment completed.";
+                case "/payment/stripe/verify" -> "Payment verified and recorded successfully!";
+                case "/payment/stripe/record" -> "Payment recorded successfully!";
+                default -> "Stripe payment processed successfully.";
+            };
+            return Map.of("message", message, "data", toSnakeCase(body));
+        }
+        if (path.equals("/payment/bakong/qr")) {
+            return Map.of("message", "Bakong KHQR generated.", "data", toSnakeCase(body));
+        }
+        if (path.equals("/payment/bakong/verify")) {
+            return Map.of("message", "Bakong QR status retrieved.", "data", toSnakeCase(body));
+        }
+        if (path.equals("/payment/bakong/account")) {
+            return Map.of("message", "Bakong account check complete.", "data", toSnakeCase(body));
+        }
         if (path.equals("/dashboard/summary")) {
             return Map.of("message", "Dashboard summary retrieved successfully!", "data", body == null ? Map.of() : body);
         }
@@ -125,6 +147,11 @@ public class ScholarisCompatibilityAdvice extends RequestBodyAdviceAdapter
     private boolean isCompatibilityRequest() {
         String path = request.getRequestURI();
         return path != null && !path.equals("/api") && !path.startsWith("/api/");
+    }
+
+    private boolean isPaymentWebhook() {
+        String path = request.getRequestURI();
+        return "/payment/stripe/webhook".equals(path) || "/payment/bakong/webhook".equals(path);
     }
 
     private JsonNode toCamelCase(JsonNode node) {
