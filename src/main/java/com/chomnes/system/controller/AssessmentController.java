@@ -40,40 +40,40 @@ public class AssessmentController {
 
     @GetMapping({"/{assessmentId}", "/data/{assessmentId}"})
     public AssessmentResponse findById(
-            @PathVariable Integer assessmentId,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable Integer assessmentId,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return assessmentService.findById(assessmentId, requesterId(principal), requesterRole(principal));
     }
 
     @PostMapping({"", "/create"})
     public ResponseEntity<AssessmentResponse> create(
-            @Valid @RequestBody CreateAssessmentRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @Valid @RequestBody CreateAssessmentRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         AssessmentResponse created = assessmentService.create(
-                request,
-                requesterId(principal),
-                requesterRole(principal)
+            request,
+            requesterId(principal),
+            requesterRole(principal)
         );
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{assessmentId}")
-                .buildAndExpand(created.assessmentId())
-                .toUri();
+            .path("/{assessmentId}")
+            .buildAndExpand(created.assessmentId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping({"/{assessmentId}", "/update/{assessmentId}"})
     public AssessmentResponse update(
-            @PathVariable Integer assessmentId,
-            @Valid @RequestBody UpdateAssessmentRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable Integer assessmentId,
+        @Valid @RequestBody UpdateAssessmentRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return assessmentService.update(
-                assessmentId,
-                request,
-                requesterId(principal),
-                requesterRole(principal)
+            assessmentId,
+            request,
+            requesterId(principal),
+            requesterRole(principal)
         );
     }
 

@@ -8,16 +8,16 @@ import java.util.Optional;
 
 public interface FinalGradeRepository extends JpaRepository<FinalGrade, Integer> {
     Optional<FinalGrade> findByStudentIdAndSubjectIdAndSemesterId(
-            Integer studentId,
-            Integer subjectId,
-            Integer semesterId
+        Integer studentId,
+        Integer subjectId,
+        Integer semesterId
     );
 
     boolean existsByStudentIdAndSubjectIdAndSemesterIdAndFinalGradeIdNot(
-            Integer studentId,
-            Integer subjectId,
-            Integer semesterId,
-            Integer finalGradeId
+        Integer studentId,
+        Integer subjectId,
+        Integer semesterId,
+        Integer finalGradeId
     );
 
     List<FinalGrade> findAllByOrderByComputedAtDescFinalGradeIdDesc();

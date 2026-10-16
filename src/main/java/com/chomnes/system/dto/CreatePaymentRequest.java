@@ -12,24 +12,24 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record CreatePaymentRequest(
-        @NotNull @Positive Integer invoiceId,
-        @NotNull LocalDate paymentDate,
-        @NotNull @DecimalMin("0.01") @Digits(integer = 8, fraction = 2) BigDecimal amount,
-        @NotBlank @Pattern(regexp = "(?i)Stripe|BakongKHQR", message = "must be Stripe or BakongKHQR")
-        String paymentMethod,
-        @Size(max = 255) String receiptUrl,
-        @Size(max = 255) String transactionReference,
-        @jakarta.validation.constraints.Positive Integer recordedBy,
-        @Size(max = 255) String notes
+    @NotNull @Positive Integer invoiceId,
+    @NotNull LocalDate paymentDate,
+    @NotNull @DecimalMin("0.01") @Digits(integer = 8, fraction = 2) BigDecimal amount,
+    @NotBlank @Pattern(regexp = "(?i)Stripe|BakongKHQR", message = "must be Stripe or BakongKHQR")
+    String paymentMethod,
+    @Size(max = 255) String receiptUrl,
+    @Size(max = 255) String transactionReference,
+    @jakarta.validation.constraints.Positive Integer recordedBy,
+    @Size(max = 255) String notes
 ) {
     public CreatePaymentRequest(
-            Integer invoiceId,
-            java.time.LocalDate paymentDate,
-            BigDecimal amount,
-            String paymentMethod,
-            String receiptUrl,
-            String transactionReference,
-            String notes
+        Integer invoiceId,
+        java.time.LocalDate paymentDate,
+        BigDecimal amount,
+        String paymentMethod,
+        String receiptUrl,
+        String transactionReference,
+        String notes
     ) {
         this(invoiceId, paymentDate, amount, paymentMethod, receiptUrl, transactionReference, null, notes);
     }

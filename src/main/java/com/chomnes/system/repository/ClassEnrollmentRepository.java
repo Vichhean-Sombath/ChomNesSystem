@@ -14,17 +14,17 @@ public interface ClassEnrollmentRepository extends JpaRepository<ClassEnrollment
     boolean existsByStudentIdAndClassId(Integer studentId, Integer classId);
 
     boolean existsByStudentIdAndClassIdAndStatusAndEnrollmentDateLessThanEqual(
-            Integer studentId,
-            Integer classId,
-            String status,
-            LocalDate enrollmentDate
+        Integer studentId,
+        Integer classId,
+        String status,
+        LocalDate enrollmentDate
     );
 
     boolean existsByStudentIdAndClassIdAndStatusAndEnrollmentIdNot(
-            Integer studentId,
-            Integer classId,
-            String status,
-            Integer enrollmentId
+        Integer studentId,
+        Integer classId,
+        String status,
+        Integer enrollmentId
     );
 
     List<ClassEnrollment> findAllByOrderByEnrollmentDateDescEnrollmentIdAsc();

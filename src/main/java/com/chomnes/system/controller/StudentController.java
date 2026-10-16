@@ -40,8 +40,8 @@ public class StudentController {
 
     @GetMapping({"/{studentId}", "/data/{studentId}"})
     public StudentResponse findById(
-            @PathVariable("studentId") Integer studentId,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable("studentId") Integer studentId,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return studentService.findById(studentId, requesterId(principal), requesterRole(principal));
     }
@@ -50,23 +50,23 @@ public class StudentController {
     public ResponseEntity<StudentResponse> create(@Valid @RequestBody CreateStudentRequest request) {
         StudentResponse created = studentService.create(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{studentId}")
-                .buildAndExpand(created.studentId())
-                .toUri();
+            .path("/{studentId}")
+            .buildAndExpand(created.studentId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping({"/{studentId}", "/update/{studentId}"})
     public StudentResponse update(
-            @PathVariable("studentId") Integer studentId,
-            @Valid @RequestBody UpdateStudentRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable("studentId") Integer studentId,
+        @Valid @RequestBody UpdateStudentRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return studentService.update(
-                studentId,
-                request,
-                requesterId(principal),
-                requesterRole(principal)
+            studentId,
+            request,
+            requesterId(principal),
+            requesterRole(principal)
         );
     }
 

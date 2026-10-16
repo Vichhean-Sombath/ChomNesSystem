@@ -27,7 +27,7 @@ public class StoredFileController {
     private final LessonResourceService resources;
 
     public StoredFileController(
-            FileStorageService files, CertificateService certificates, LessonResourceService resources
+        FileStorageService files, CertificateService certificates, LessonResourceService resources
     ) {
         this.files = files;
         this.certificates = certificates;
@@ -36,24 +36,24 @@ public class StoredFileController {
 
     @GetMapping("/files/{fileName}")
     public ResponseEntity<FileSystemResource> download(
-            @PathVariable String fileName,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable String fileName,
+        @AuthenticationPrincipal Jwt principal
     ) {
         String url = "/files/" + fileName;
         Integer userId = userId(principal);
         User.Role role = role(principal);
         boolean authorized = certificates.canReadFile(url, userId, role)
-                || resources.canReadFile(url, userId, role);
+            || resources.canReadFile(url, userId, role);
         if (!authorized) throw new AccessDeniedException("You cannot access this file.");
         FileStorageService.StoredFileInfo stored = files.load(fileName);
         MediaType type = MediaType.parseMediaType(stored.contentType());
         return ResponseEntity.ok()
-                .contentType(type)
-                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
-                        .filename(stored.fileName(), StandardCharsets.UTF_8).build().toString())
-                .header("X-Content-Type-Options", "nosniff")
-                .cacheControl(CacheControl.noCache())
-                .body(new FileSystemResource(stored.path()));
+            .contentType(type)
+            .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                .filename(stored.fileName(), StandardCharsets.UTF_8).build().toString())
+            .header("X-Content-Type-Options", "nosniff")
+            .cacheControl(CacheControl.noCache())
+            .body(new FileSystemResource(stored.path()));
     }
 
     private Integer userId(Jwt principal) {

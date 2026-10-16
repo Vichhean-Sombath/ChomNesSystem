@@ -39,40 +39,40 @@ public class StudentEmergencyContactController {
 
     @GetMapping({"/{contactId}", "/data/{contactId}"})
     public StudentEmergencyContactResponse findById(
-            @PathVariable Integer contactId,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable Integer contactId,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return contactService.findById(contactId, requesterId(principal), requesterRole(principal));
     }
 
     @PostMapping({"", "/create"})
     public ResponseEntity<StudentEmergencyContactResponse> create(
-            @Valid @RequestBody CreateStudentEmergencyContactRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @Valid @RequestBody CreateStudentEmergencyContactRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         StudentEmergencyContactResponse created = contactService.create(
-                request, requesterId(principal), requesterRole(principal)
+            request, requesterId(principal), requesterRole(principal)
         );
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{contactId}")
-                .buildAndExpand(created.contactId())
-                .toUri();
+            .path("/{contactId}")
+            .buildAndExpand(created.contactId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping({"/{contactId}", "/update/{contactId}"})
     public StudentEmergencyContactResponse update(
-            @PathVariable Integer contactId,
-            @Valid @RequestBody UpdateStudentEmergencyContactRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable Integer contactId,
+        @Valid @RequestBody UpdateStudentEmergencyContactRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return contactService.update(contactId, request, requesterId(principal), requesterRole(principal));
     }
 
     @DeleteMapping({"/{contactId}", "/delete/{contactId}"})
     public ResponseEntity<Void> delete(
-            @PathVariable Integer contactId,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable Integer contactId,
+        @AuthenticationPrincipal Jwt principal
     ) {
         contactService.delete(contactId, requesterId(principal), requesterRole(principal));
         return ResponseEntity.noContent().build();

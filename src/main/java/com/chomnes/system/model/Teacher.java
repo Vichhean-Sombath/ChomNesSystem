@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+
 import java.time.LocalDate;
 
 @Entity
@@ -64,16 +65,16 @@ public class Teacher {
     }
 
     public Teacher(
-            Integer userId,
-            String firstName,
-            String lastName,
-            LocalDate dob,
-            String gender,
-            String photoUrl,
-            String contactNumber,
-            String specialization,
-            String bio,
-            LocalDate hireDate
+        Integer userId,
+        String firstName,
+        String lastName,
+        LocalDate dob,
+        String gender,
+        String photoUrl,
+        String contactNumber,
+        String specialization,
+        String bio,
+        LocalDate hireDate
     ) {
         this.userId = userId;
         this.firstName = firstName;

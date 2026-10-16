@@ -10,14 +10,14 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
 public record CreateStudentRequest(
-        @NotNull @Positive Integer userId,
-        @NotBlank @Size(max = 50) String firstName,
-        @NotBlank @Size(max = 50) String lastName,
-        @Past LocalDate dob,
-        @Pattern(regexp = "Male|Female|Other") String gender,
-        @Size(max = 255) String photoUrl,
-        @Size(max = 20) String contactNumber,
-        @Size(max = 255) String address,
-        LocalDate enrollmentDate
+    @NotNull @Positive Integer userId,
+    @NotBlank @Size(max = 50) String firstName,
+    @NotBlank @Size(max = 50) String lastName,
+    @Past LocalDate dob,
+    @Pattern(regexp = "Male|Female|Other") String gender,
+    @Size(max = 255) String photoUrl,
+    @Size(max = 20) String contactNumber,
+    @Size(max = 255) String address,
+    LocalDate enrollmentDate
 ) {
 }

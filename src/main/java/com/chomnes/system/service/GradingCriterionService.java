@@ -29,9 +29,9 @@ public class GradingCriterionService {
     private final SchoolClassRepository schoolClassRepository;
 
     public GradingCriterionService(
-            GradingCriterionRepository criterionRepository,
-            SubjectRepository subjectRepository,
-            SchoolClassRepository schoolClassRepository
+        GradingCriterionRepository criterionRepository,
+        SubjectRepository subjectRepository,
+        SchoolClassRepository schoolClassRepository
     ) {
         this.criterionRepository = criterionRepository;
         this.subjectRepository = subjectRepository;
@@ -41,9 +41,9 @@ public class GradingCriterionService {
     @Transactional(readOnly = true)
     public List<GradingCriterionResponse> findAll() {
         return criterionRepository.findAll(Sort.by(Sort.Direction.ASC, "criteriaId"))
-                .stream()
-                .map(GradingCriterionResponse::from)
-                .toList();
+            .stream()
+            .map(GradingCriterionResponse::from)
+            .toList();
     }
 
     @Transactional(readOnly = true)
@@ -57,11 +57,11 @@ public class GradingCriterionService {
         ensureWeightTotal(request.subjectId(), request.classId(), request.weightPercentage(), null);
 
         GradingCriterion criterion = new GradingCriterion(
-                request.subjectId(),
-                request.classId(),
-                componentName,
-                request.weightPercentage(),
-                request.attemptCount()
+            request.subjectId(),
+            request.classId(),
+            componentName,
+            request.weightPercentage(),
+            request.attemptCount()
         );
         return GradingCriterionResponse.from(criterionRepository.save(criterion));
     }
@@ -79,17 +79,17 @@ public class GradingCriterionService {
 
         GradingCriterion criterion = getCriterion(criteriaId);
         Integer subjectId = Boolean.TRUE.equals(request.clearSubject())
-                ? null
-                : request.subjectId() == null ? criterion.getSubjectId() : request.subjectId();
+            ? null
+            : request.subjectId() == null ? criterion.getSubjectId() : request.subjectId();
         Integer classId = Boolean.TRUE.equals(request.clearClass())
-                ? null
-                : request.classId() == null ? criterion.getClassId() : request.classId();
+            ? null
+            : request.classId() == null ? criterion.getClassId() : request.classId();
         String componentName = request.componentName() == null
-                ? criterion.getComponentName()
-                : requireNonBlank(request.componentName());
+            ? criterion.getComponentName()
+            : requireNonBlank(request.componentName());
         BigDecimal weightPercentage = request.weightPercentage() == null
-                ? criterion.getWeightPercentage()
-                : request.weightPercentage();
+            ? criterion.getWeightPercentage()
+            : request.weightPercentage();
 
         validateReferences(subjectId, classId);
         ensureWeightTotal(subjectId, classId, weightPercentage, criteriaId);
@@ -111,7 +111,7 @@ public class GradingCriterionService {
 
     private GradingCriterion getCriterion(Integer criteriaId) {
         return criterionRepository.findById(criteriaId)
-                .orElseThrow(() -> new GradingCriterionNotFoundException(criteriaId));
+            .orElseThrow(() -> new GradingCriterionNotFoundException(criteriaId));
     }
 
     private void validateReferences(Integer subjectId, Integer classId) {
@@ -124,20 +124,20 @@ public class GradingCriterionService {
     }
 
     private void ensureWeightTotal(
-            Integer subjectId,
-            Integer classId,
-            BigDecimal newWeight,
-            Integer excludedCriteriaId
+        Integer subjectId,
+        Integer classId,
+        BigDecimal newWeight,
+        Integer excludedCriteriaId
     ) {
         BigDecimal currentTotal = criterionRepository.findAll().stream()
-                .filter(criterion -> Objects.equals(criterion.getSubjectId(), subjectId))
-                .filter(criterion -> Objects.equals(criterion.getClassId(), classId))
-                .filter(criterion -> !Objects.equals(criterion.getCriteriaId(), excludedCriteriaId))
-                .map(GradingCriterion::getWeightPercentage)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            .filter(criterion -> Objects.equals(criterion.getSubjectId(), subjectId))
+            .filter(criterion -> Objects.equals(criterion.getClassId(), classId))
+            .filter(criterion -> !Objects.equals(criterion.getCriteriaId(), excludedCriteriaId))
+            .map(GradingCriterion::getWeightPercentage)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
         if (currentTotal.add(newWeight).compareTo(MAX_TOTAL_WEIGHT) > 0) {
             throw new GradingCriterionConflictException(
-                    "The total grading weight for this subject and class cannot exceed 100 percent."
+                "The total grading weight for this subject and class cannot exceed 100 percent."
             );
         }
     }

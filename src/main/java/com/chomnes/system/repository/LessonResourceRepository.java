@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public interface LessonResourceRepository extends JpaRepository<LessonResource, Integer> {
     Optional<LessonResource> findByFileUrl(String fileUrl);
+
     List<LessonResource> findAllByOrderByUploadDateDescResourceIdDesc();
 
     List<LessonResource> findAllByTeacherIdOrderByUploadDateDescResourceIdDesc(Integer teacherId);

@@ -5,9 +5,9 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 public record CreateSubjectRequest(
-        @NotBlank @Size(max = 20) String subjectCode,
-        @NotBlank @Size(max = 100) String subjectName,
-        String description,
-        @Positive Integer prerequisiteSubjectId
+    @NotBlank @Size(max = 20) String subjectCode,
+    @NotBlank @Size(max = 100) String subjectName,
+    String description,
+    @Positive Integer prerequisiteSubjectId
 ) {
 }

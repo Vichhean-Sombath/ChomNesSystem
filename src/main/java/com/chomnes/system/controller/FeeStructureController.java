@@ -47,16 +47,16 @@ public class FeeStructureController {
     public ResponseEntity<FeeStructureResponse> create(@Valid @RequestBody CreateFeeStructureRequest request) {
         FeeStructureResponse created = feeStructureService.create(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{feeId}")
-                .buildAndExpand(created.feeId())
-                .toUri();
+            .path("/{feeId}")
+            .buildAndExpand(created.feeId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping({"/{feeId}", "/update/{feeId}"})
     public FeeStructureResponse update(
-            @PathVariable Integer feeId,
-            @Valid @RequestBody UpdateFeeStructureRequest request
+        @PathVariable Integer feeId,
+        @Valid @RequestBody UpdateFeeStructureRequest request
     ) {
         return feeStructureService.update(feeId, request);
     }

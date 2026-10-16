@@ -42,12 +42,12 @@ public class SchoolClass {
     }
 
     public SchoolClass(
-            String className,
-            Integer academicYearId,
-            Integer semesterId,
-            String roomNumber,
-            Integer maxCapacity,
-            Integer homeroomTeacherId
+        String className,
+        Integer academicYearId,
+        Integer semesterId,
+        String roomNumber,
+        Integer maxCapacity,
+        Integer homeroomTeacherId
     ) {
         this.className = className;
         this.academicYearId = academicYearId;

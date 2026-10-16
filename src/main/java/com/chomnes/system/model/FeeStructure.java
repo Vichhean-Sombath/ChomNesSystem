@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+
 import java.time.LocalDate;
 import java.math.BigDecimal;
 
@@ -40,11 +41,11 @@ public class FeeStructure {
     }
 
     public FeeStructure(
-            Integer classId,
-            Integer semesterId,
-            String feeName,
-            BigDecimal amount,
-            LocalDate dueDate
+        Integer classId,
+        Integer semesterId,
+        String feeName,
+        BigDecimal amount,
+        LocalDate dueDate
     ) {
         this.classId = classId;
         this.semesterId = semesterId;

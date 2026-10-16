@@ -29,9 +29,9 @@ public class BakongQrRequestService {
     private final StudentRepository studentRepository;
 
     public BakongQrRequestService(
-            BakongQrRequestRepository requestRepository,
-            InvoiceRepository invoiceRepository,
-            StudentRepository studentRepository
+        BakongQrRequestRepository requestRepository,
+        InvoiceRepository invoiceRepository,
+        StudentRepository studentRepository
     ) {
         this.requestRepository = requestRepository;
         this.invoiceRepository = invoiceRepository;
@@ -42,23 +42,23 @@ public class BakongQrRequestService {
     public List<BakongQrRequestResponse> findAll(Integer requesterId, User.Role requesterRole) {
         if (requesterRole == User.Role.Admin) {
             return requestRepository.findAllByOrderByCreatedAtDescQrIdDesc().stream()
-                    .map(this::expireIfNeeded)
-                    .map(BakongQrRequestResponse::from)
-                    .toList();
+                .map(this::expireIfNeeded)
+                .map(BakongQrRequestResponse::from)
+                .toList();
         }
         if (requesterRole == User.Role.Student) {
             Student student = getStudentForUser(requesterId);
             List<Integer> invoiceIds = invoiceRepository
-                    .findAllByStudentIdOrderByCreatedAtDescInvoiceIdDesc(student.getStudentId()).stream()
-                    .map(Invoice::getInvoiceId)
-                    .toList();
+                .findAllByStudentIdOrderByCreatedAtDescInvoiceIdDesc(student.getStudentId()).stream()
+                .map(Invoice::getInvoiceId)
+                .toList();
             if (invoiceIds.isEmpty()) {
                 return List.of();
             }
             return requestRepository.findAllByInvoiceIdInOrderByCreatedAtDescQrIdDesc(invoiceIds).stream()
-                    .map(this::expireIfNeeded)
-                    .map(BakongQrRequestResponse::from)
-                    .toList();
+                .map(this::expireIfNeeded)
+                .map(BakongQrRequestResponse::from)
+                .toList();
         }
         throw new AccessDeniedException("You cannot access Bakong QR requests.");
     }
@@ -66,22 +66,22 @@ public class BakongQrRequestService {
     @Transactional
     public BakongQrRequestResponse findById(Integer qrId, Integer requesterId, User.Role requesterRole) {
         BakongQrRequest request = requestRepository.findById(qrId)
-                .orElseThrow(() -> new BakongQrRequestNotFoundException(qrId));
+            .orElseThrow(() -> new BakongQrRequestNotFoundException(qrId));
         authorizeInvoiceOwner(request.getInvoiceId(), requesterId, requesterRole);
         expireIfNeeded(request);
         return BakongQrRequestResponse.from(request);
     }
 
     public BakongQrRequestResponse create(
-            CreateBakongQrRequest request,
-            Integer requesterId,
-            User.Role requesterRole
+        CreateBakongQrRequest request,
+        Integer requesterId,
+        User.Role requesterRole
     ) {
         if (requesterRole != User.Role.Admin && requesterRole != User.Role.Student) {
             throw new AccessDeniedException("Only an administrator or the invoice owner can create a Bakong QR request.");
         }
         Invoice invoice = invoiceRepository.findByIdForUpdate(request.invoiceId())
-                .orElseThrow(() -> new InvoiceNotFoundException(request.invoiceId()));
+            .orElseThrow(() -> new InvoiceNotFoundException(request.invoiceId()));
         authorizeInvoiceOwner(invoice, requesterId, requesterRole);
 
         BigDecimal remainingBalance = invoice.getTotalAmount().subtract(invoice.getAmountPaid());
@@ -93,8 +93,8 @@ public class BakongQrRequestService {
         }
         LocalDateTime now = LocalDateTime.now();
         requestRepository.findAllByInvoiceIdAndStatus(invoice.getInvoiceId(), "Pending").stream()
-                .filter(existing -> !existing.getExpiresAt().isAfter(now))
-                .forEach(existing -> existing.setStatus("Expired"));
+            .filter(existing -> !existing.getExpiresAt().isAfter(now))
+            .forEach(existing -> existing.setStatus("Expired"));
         if (requestRepository.existsByInvoiceIdAndStatus(invoice.getInvoiceId(), "Pending")) {
             throw new BakongQrRequestConflictException("A pending Bakong QR request already exists for this invoice.");
         }
@@ -103,30 +103,30 @@ public class BakongQrRequestService {
         }
 
         BakongQrRequest qrRequest = new BakongQrRequest(
-                invoice.getInvoiceId(),
-                request.md5(),
-                request.amountKhr(),
-                request.amountUsd(),
-                request.expiresAt()
+            invoice.getInvoiceId(),
+            request.md5(),
+            request.amountKhr(),
+            request.amountUsd(),
+            request.expiresAt()
         );
         return BakongQrRequestResponse.from(requestRepository.save(qrRequest));
     }
 
     @Transactional
     public BakongQrRequestResponse createGenerated(
-            Integer invoiceId,
-            String md5,
-            BigDecimal amountKhr,
-            BigDecimal amountUsd,
-            LocalDateTime expiresAt,
-            Integer requesterId,
-            User.Role requesterRole
+        Integer invoiceId,
+        String md5,
+        BigDecimal amountKhr,
+        BigDecimal amountUsd,
+        LocalDateTime expiresAt,
+        Integer requesterId,
+        User.Role requesterRole
     ) {
         if (requesterRole != User.Role.Admin && requesterRole != User.Role.Student) {
             throw new AccessDeniedException("Only an administrator or the invoice owner can create a Bakong QR request.");
         }
         Invoice invoice = invoiceRepository.findByIdForUpdate(invoiceId)
-                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
+            .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
         authorizeInvoiceOwner(invoice, requesterId, requesterRole);
         BigDecimal remainingBalance = invoice.getTotalAmount().subtract(invoice.getAmountPaid());
         if (remainingBalance.signum() <= 0 || amountUsd.signum() <= 0 || amountUsd.compareTo(remainingBalance) > 0) {
@@ -137,8 +137,8 @@ public class BakongQrRequestService {
         }
         LocalDateTime now = LocalDateTime.now();
         requestRepository.findAllByInvoiceIdAndStatus(invoiceId, "Pending").stream()
-                .filter(existing -> !existing.getExpiresAt().isAfter(now))
-                .forEach(existing -> existing.setStatus("Expired"));
+            .filter(existing -> !existing.getExpiresAt().isAfter(now))
+            .forEach(existing -> existing.setStatus("Expired"));
         if (requestRepository.existsByInvoiceIdAndStatus(invoiceId, "Pending")) {
             throw new BakongQrRequestConflictException("A pending Bakong QR request already exists for this invoice.");
         }
@@ -146,15 +146,15 @@ public class BakongQrRequestService {
             throw new IllegalArgumentException("Bakong QR expiration must be in the future.");
         }
         BakongQrRequest saved = requestRepository.save(new BakongQrRequest(
-                invoiceId, md5, amountKhr.setScale(2, RoundingMode.HALF_UP),
-                amountUsd.setScale(2, RoundingMode.HALF_UP), expiresAt));
+            invoiceId, md5, amountKhr.setScale(2, RoundingMode.HALF_UP),
+            amountUsd.setScale(2, RoundingMode.HALF_UP), expiresAt));
         return BakongQrRequestResponse.from(saved);
     }
 
     @Transactional
     public BakongQrRequest findByMd5ForRequester(String md5, Integer requesterId, User.Role requesterRole) {
         BakongQrRequest request = requestRepository.findByMd5ForUpdate(md5)
-                .orElseThrow(() -> new BakongQrRequestNotFoundException(md5));
+            .orElseThrow(() -> new BakongQrRequestNotFoundException(md5));
         authorizeInvoiceOwner(request.getInvoiceId(), requesterId, requesterRole);
         expireIfNeeded(request);
         return request;
@@ -168,7 +168,7 @@ public class BakongQrRequestService {
     @Transactional
     public BakongQrRequest markStatus(String md5, String status) {
         BakongQrRequest request = requestRepository.findByMd5ForUpdate(md5)
-                .orElseThrow(() -> new BakongQrRequestNotFoundException(md5));
+            .orElseThrow(() -> new BakongQrRequestNotFoundException(md5));
         if ("Pending".equals(request.getStatus())) {
             request.setStatus(status);
             if ("Paid".equals(status)) request.setPaidAt(LocalDateTime.now());
@@ -184,7 +184,7 @@ public class BakongQrRequestService {
             throw new AccessDeniedException("You cannot access this Bakong QR request.");
         }
         Invoice invoice = invoiceRepository.findById(invoiceId)
-                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
+            .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
         authorizeInvoiceOwner(invoice, requesterId, requesterRole);
     }
 
@@ -200,7 +200,7 @@ public class BakongQrRequestService {
 
     private Student getStudentForUser(Integer userId) {
         return studentRepository.findByUserId(userId)
-                .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
+            .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
     }
 
     private BakongQrRequest expireIfNeeded(BakongQrRequest request) {

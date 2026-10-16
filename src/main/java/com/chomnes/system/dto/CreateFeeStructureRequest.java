@@ -11,10 +11,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record CreateFeeStructureRequest(
-        @Positive Integer classId,
-        @NotNull @Positive Integer semesterId,
-        @NotBlank @Size(max = 100) String feeName,
-        @NotNull @DecimalMin("0.01") @Digits(integer = 8, fraction = 2) BigDecimal amount,
-        LocalDate dueDate
+    @Positive Integer classId,
+    @NotNull @Positive Integer semesterId,
+    @NotBlank @Size(max = 100) String feeName,
+    @NotNull @DecimalMin("0.01") @Digits(integer = 8, fraction = 2) BigDecimal amount,
+    LocalDate dueDate
 ) {
 }

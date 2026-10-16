@@ -23,8 +23,8 @@ public class AcademicYearService {
     private final SemesterRepository semesterRepository;
 
     public AcademicYearService(
-            AcademicYearRepository academicYearRepository,
-            SemesterRepository semesterRepository
+        AcademicYearRepository academicYearRepository,
+        SemesterRepository semesterRepository
     ) {
         this.academicYearRepository = academicYearRepository;
         this.semesterRepository = semesterRepository;
@@ -33,9 +33,9 @@ public class AcademicYearService {
     @Transactional(readOnly = true)
     public List<AcademicYearResponse> findAll() {
         return academicYearRepository.findAll(Sort.by(Sort.Direction.ASC, "startDate"))
-                .stream()
-                .map(AcademicYearResponse::from)
-                .toList();
+            .stream()
+            .map(AcademicYearResponse::from)
+            .toList();
     }
 
     @Transactional(readOnly = true)
@@ -61,15 +61,15 @@ public class AcademicYearService {
         AcademicYear academicYear = getAcademicYear(academicYearId);
 
         String yearName = request.yearName() == null
-                ? academicYear.getYearName()
-                : requireNonBlank(request.yearName(), "Year name");
+            ? academicYear.getYearName()
+            : requireNonBlank(request.yearName(), "Year name");
         LocalDate startDate = request.startDate() == null ? academicYear.getStartDate() : request.startDate();
         LocalDate endDate = request.endDate() == null ? academicYear.getEndDate() : request.endDate();
         requireValidDates(startDate, endDate);
         requireDatesContainSemesters(academicYearId, startDate, endDate);
 
         if (!yearName.equals(academicYear.getYearName())
-                && academicYearRepository.existsByYearNameAndAcademicYearIdNot(yearName, academicYearId)) {
+            && academicYearRepository.existsByYearNameAndAcademicYearIdNot(yearName, academicYearId)) {
             throw new AcademicYearConflictException("An academic year with this name already exists.");
         }
 
@@ -89,7 +89,7 @@ public class AcademicYearService {
 
     private AcademicYear getAcademicYear(Integer academicYearId) {
         return academicYearRepository.findById(academicYearId)
-                .orElseThrow(() -> new AcademicYearNotFoundException(academicYearId));
+            .orElseThrow(() -> new AcademicYearNotFoundException(academicYearId));
     }
 
     private String requireNonBlank(String value, String field) {
@@ -110,7 +110,7 @@ public class AcademicYearService {
         for (Semester semester : semesterRepository.findAllByAcademicYearIdOrderByStartDateAsc(academicYearId)) {
             if (semester.getStartDate().isBefore(startDate) || semester.getEndDate().isAfter(endDate)) {
                 throw new AcademicYearConflictException(
-                        "Academic year dates must contain all of its semester dates."
+                    "Academic year dates must contain all of its semester dates."
                 );
             }
         }

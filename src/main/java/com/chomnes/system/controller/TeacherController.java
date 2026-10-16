@@ -40,8 +40,8 @@ public class TeacherController {
 
     @GetMapping({"/{teacherId}", "/data/{teacherId}"})
     public TeacherResponse findById(
-            @PathVariable("teacherId") Integer teacherId,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable("teacherId") Integer teacherId,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return teacherService.findById(teacherId, requesterId(principal), requesterRole(principal));
     }
@@ -50,23 +50,23 @@ public class TeacherController {
     public ResponseEntity<TeacherResponse> create(@Valid @RequestBody CreateTeacherRequest request) {
         TeacherResponse created = teacherService.create(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{teacherId}")
-                .buildAndExpand(created.teacherId())
-                .toUri();
+            .path("/{teacherId}")
+            .buildAndExpand(created.teacherId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping({"/{teacherId}", "/update/{teacherId}"})
     public TeacherResponse update(
-            @PathVariable("teacherId") Integer teacherId,
-            @Valid @RequestBody UpdateTeacherRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable("teacherId") Integer teacherId,
+        @Valid @RequestBody UpdateTeacherRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return teacherService.update(
-                teacherId,
-                request,
-                requesterId(principal),
-                requesterRole(principal)
+            teacherId,
+            request,
+            requesterId(principal),
+            requesterRole(principal)
         );
     }
 

@@ -2,15 +2,14 @@ package com.chomnes.system.config;
 
 import com.chomnes.system.exception.ApiExceptionHandler;
 import com.chomnes.system.dto.ScholarisAuthResponse;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.json.MappingJacksonInputMessage;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.RequestBodyAdviceAdapter;
@@ -24,10 +23,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Adapts JSON names and envelopes only on the legacy Scholaris-compatible routes. */
+/**
+ * Adapts JSON names and envelopes only on the legacy Scholaris-compatible routes.
+ */
 @ControllerAdvice
 public class ScholarisCompatibilityAdvice extends RequestBodyAdviceAdapter
-        implements ResponseBodyAdvice<Object> {
+    implements ResponseBodyAdvice<Object> {
     private final ObjectMapper objectMapper;
     private final HttpServletRequest request;
 
@@ -38,27 +39,37 @@ public class ScholarisCompatibilityAdvice extends RequestBodyAdviceAdapter
 
     @Override
     public boolean supports(
-            MethodParameter methodParameter,
-            Type targetType,
-            Class<? extends HttpMessageConverter<?>> converterType
+        MethodParameter methodParameter,
+        Type targetType,
+        Class<? extends HttpMessageConverter<?>> converterType
     ) {
         return isCompatibilityRequest() && !isPaymentWebhook() && methodParameter.hasParameterAnnotation(
-                org.springframework.web.bind.annotation.RequestBody.class
+            org.springframework.web.bind.annotation.RequestBody.class
         );
     }
 
     @Override
     public HttpInputMessage beforeBodyRead(
-            HttpInputMessage inputMessage,
-            MethodParameter parameter,
-            Type targetType,
-            Class<? extends HttpMessageConverter<?>> converterType
+        HttpInputMessage inputMessage,
+        MethodParameter parameter,
+        Type targetType,
+        Class<? extends HttpMessageConverter<?>> converterType
     ) throws IOException {
         byte[] bytes = inputMessage.getBody().readAllBytes();
         JsonNode root = objectMapper.readTree(bytes);
         JsonNode converted = toCamelCase(root);
         byte[] rewritten = objectMapper.writeValueAsBytes(converted);
-        return new MappingJacksonInputMessage(new ByteArrayInputStream(rewritten), inputMessage.getHeaders());
+        return new HttpInputMessage() {
+            @Override
+            public org.springframework.http.HttpHeaders getHeaders() {
+                return inputMessage.getHeaders();
+            }
+
+            @Override
+            public java.io.InputStream getBody() {
+                return new ByteArrayInputStream(rewritten);
+            }
+        };
     }
 
     @Override
@@ -68,15 +79,15 @@ public class ScholarisCompatibilityAdvice extends RequestBodyAdviceAdapter
 
     @Override
     public Object beforeBodyWrite(
-            Object body,
-            MethodParameter returnType,
-            MediaType selectedContentType,
-            Class<? extends HttpMessageConverter<?>> selectedConverterType,
-            org.springframework.http.server.ServerHttpRequest serverRequest,
-            ServerHttpResponse serverResponse
+        Object body,
+        MethodParameter returnType,
+        MediaType selectedContentType,
+        Class<? extends HttpMessageConverter<?>> selectedConverterType,
+        org.springframework.http.server.ServerHttpRequest serverRequest,
+        ServerHttpResponse serverResponse
     ) {
         if (body instanceof ScholarisAuthResponse || request.getRequestURI().equals("/user/logout")
-                || request.getRequestURI().equals("/user/change-password")) {
+            || request.getRequestURI().equals("/user/change-password")) {
             return toSnakeCase(body);
         }
         if (body instanceof ApiExceptionHandler.ApiError apiError) {
@@ -164,7 +175,7 @@ public class ScholarisCompatibilityAdvice extends RequestBodyAdviceAdapter
             return result;
         }
         ObjectNode result = objectMapper.createObjectNode();
-        node.fields().forEachRemaining(entry -> result.set(camel(entry.getKey()), toCamelCase(entry.getValue())));
+        node.properties().forEach(entry -> result.set(camel(entry.getKey()), toCamelCase(entry.getValue())));
         return result;
     }
 
@@ -186,7 +197,7 @@ public class ScholarisCompatibilityAdvice extends RequestBodyAdviceAdapter
             return result;
         }
         Map<String, Object> result = new LinkedHashMap<>();
-        node.fields().forEachRemaining(entry -> result.put(snake(entry.getKey()), snakeTree(entry.getValue())));
+        node.properties().forEach(entry -> result.put(snake(entry.getKey()), snakeTree(entry.getValue())));
         return result;
     }
 

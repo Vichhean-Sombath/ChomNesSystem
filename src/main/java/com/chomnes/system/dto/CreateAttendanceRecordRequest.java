@@ -7,9 +7,9 @@ import jakarta.validation.constraints.Positive;
 import java.time.LocalDate;
 
 public record CreateAttendanceRecordRequest(
-        @NotNull @Positive Integer scheduleId,
-        @NotNull @Positive Integer studentId,
-        LocalDate attendanceDate,
-        @NotNull @Pattern(regexp = "Present|Absent|Late|Excused") String status
+    @NotNull @Positive Integer scheduleId,
+    @NotNull @Positive Integer studentId,
+    LocalDate attendanceDate,
+    @NotNull @Pattern(regexp = "Present|Absent|Late|Excused") String status
 ) {
 }

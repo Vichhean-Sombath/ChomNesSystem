@@ -40,8 +40,8 @@ public class ClassEnrollmentController {
 
     @GetMapping({"/{enrollmentId}", "/data/{enrollmentId}"})
     public ClassEnrollmentResponse findById(
-            @PathVariable Integer enrollmentId,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable Integer enrollmentId,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return enrollmentService.findById(enrollmentId, requesterId(principal), requesterRole(principal));
     }
@@ -50,23 +50,23 @@ public class ClassEnrollmentController {
     public ResponseEntity<ClassEnrollmentResponse> create(@Valid @RequestBody CreateClassEnrollmentRequest request) {
         ClassEnrollmentResponse created = enrollmentService.create(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{enrollmentId}")
-                .buildAndExpand(created.enrollmentId())
-                .toUri();
+            .path("/{enrollmentId}")
+            .buildAndExpand(created.enrollmentId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping({"/{enrollmentId}", "/update/{enrollmentId}"})
     public ClassEnrollmentResponse update(
-            @PathVariable Integer enrollmentId,
-            @Valid @RequestBody UpdateClassEnrollmentRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable Integer enrollmentId,
+        @Valid @RequestBody UpdateClassEnrollmentRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return enrollmentService.update(
-                enrollmentId,
-                request,
-                requesterId(principal),
-                requesterRole(principal)
+            enrollmentId,
+            request,
+            requesterId(principal),
+            requesterRole(principal)
         );
     }
 

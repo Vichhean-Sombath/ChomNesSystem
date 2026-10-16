@@ -34,20 +34,20 @@ public class ReportsService {
     private final SemesterRepository semesters;
 
     public ReportsService(
-            PaymentRepository payments,
-            InvoiceRepository invoices,
-            StudentRepository students,
-            TeacherRepository teachers,
-            UserRepository users,
-            SchoolClassRepository classes,
-            ClassEnrollmentRepository enrollments,
-            ScheduleRepository schedules,
-            TimeSlotRepository timeSlots,
-            AttendanceRecordRepository attendance,
-            FinalGradeRepository finalGrades,
-            SubjectRepository subjects,
-            AcademicYearRepository academicYears,
-            SemesterRepository semesters
+        PaymentRepository payments,
+        InvoiceRepository invoices,
+        StudentRepository students,
+        TeacherRepository teachers,
+        UserRepository users,
+        SchoolClassRepository classes,
+        ClassEnrollmentRepository enrollments,
+        ScheduleRepository schedules,
+        TimeSlotRepository timeSlots,
+        AttendanceRecordRepository attendance,
+        FinalGradeRepository finalGrades,
+        SubjectRepository subjects,
+        AcademicYearRepository academicYears,
+        SemesterRepository semesters
     ) {
         this.payments = payments;
         this.invoices = invoices;
@@ -86,26 +86,26 @@ public class ReportsService {
         Map<Integer, Semester> semesterById = index(semesters.findAll(), Semester::getSemesterId);
 
         return object(
-                "financial", financial(paymentRows, invoiceRows, invoiceById, studentById, range, semesterId),
-                "enrollment", enrollment(studentRows, classRows, enrollmentRows, academicYearById, semesterById,
-                        academicYearId, semesterId),
-                "academic", academic(attendanceRows, scheduleById, classById, finalGradeRows,
-                        subjectById, semesterId, academicYearId),
-                "teacherWorkload", teacherWorkload(teacherRows, classRows, scheduleRows,
-                        timeSlotById, academicYearId, semesterId)
+            "financial", financial(paymentRows, invoiceRows, invoiceById, studentById, range, semesterId),
+            "enrollment", enrollment(studentRows, classRows, enrollmentRows, academicYearById, semesterById,
+                academicYearId, semesterId),
+            "academic", academic(attendanceRows, scheduleById, classById, finalGradeRows,
+                subjectById, semesterId, academicYearId),
+            "teacherWorkload", teacherWorkload(teacherRows, classRows, scheduleRows,
+                timeSlotById, academicYearId, semesterId)
         );
     }
 
     private Map<String, Object> financial(
-            List<Payment> paymentRows,
-            List<Invoice> invoiceRows,
-            Map<Integer, Invoice> invoiceById,
-            Map<Integer, Student> studentById,
-            String range,
-            Integer semesterId
+        List<Payment> paymentRows,
+        List<Invoice> invoiceRows,
+        Map<Integer, Invoice> invoiceById,
+        Map<Integer, Student> studentById,
+        String range,
+        Integer semesterId
     ) {
         List<Invoice> selectedInvoices = invoiceRows.stream()
-                .filter(invoice -> semesterId == null || semesterId.equals(invoice.getSemesterId())).toList();
+            .filter(invoice -> semesterId == null || semesterId.equals(invoice.getSemesterId())).toList();
         List<Payment> selectedPayments = paymentRows.stream().filter(payment -> {
             if (semesterId == null) return true;
             Invoice invoice = invoiceById.get(payment.getInvoiceId());
@@ -114,97 +114,97 @@ public class ReportsService {
 
         BigDecimal revenue = sumPayments(selectedPayments);
         BigDecimal billed = selectedInvoices.stream().map(Invoice::getTotalAmount).map(ReportsService::amount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal paid = selectedInvoices.stream().map(Invoice::getAmountPaid).map(ReportsService::amount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
         List<Invoice> outstanding = selectedInvoices.stream().filter(this::isOutstanding)
-                .sorted(Comparator.comparing(Invoice::getDueDate, Comparator.nullsLast(Comparator.reverseOrder())))
-                .toList();
+            .sorted(Comparator.comparing(Invoice::getDueDate, Comparator.nullsLast(Comparator.reverseOrder())))
+            .toList();
         List<Map<String, Object>> outstandingRows = outstanding.stream().limit(50).map(invoice -> {
             Student student = studentById.get(invoice.getStudentId());
             BigDecimal total = amount(invoice.getTotalAmount());
             BigDecimal amountPaid = amount(invoice.getAmountPaid());
             return object("invoiceId", invoice.getInvoiceId(), "invoiceNumber", invoice.getInvoiceNumber(),
-                    "studentName", student == null ? "—" : fullName(student.getFirstName(), student.getLastName()),
-                    "issueDate", invoice.getIssueDate(), "dueDate", invoice.getDueDate(),
-                    "totalAmount", total, "amountPaid", amountPaid, "balanceDue", total.subtract(amountPaid),
-                    "status", invoice.getStatus());
+                "studentName", student == null ? "—" : fullName(student.getFirstName(), student.getLastName()),
+                "issueDate", invoice.getIssueDate(), "dueDate", invoice.getDueDate(),
+                "totalAmount", total, "amountPaid", amountPaid, "balanceDue", total.subtract(amountPaid),
+                "status", invoice.getStatus());
         }).toList();
         BigDecimal outstandingAmount = billed.subtract(paid);
         BigDecimal collectionRate = billed.signum() == 0 ? BigDecimal.ZERO
-                : paid.multiply(BigDecimal.valueOf(100)).divide(billed, 1, RoundingMode.HALF_UP);
+            : paid.multiply(BigDecimal.valueOf(100)).divide(billed, 1, RoundingMode.HALF_UP);
 
         Map<String, BigDecimal> methods = new TreeMap<>();
         selectedPayments.forEach(payment -> methods.merge(
-                payment.getPaymentMethod() == null ? "Other" : payment.getPaymentMethod(),
-                amount(payment.getAmount()), BigDecimal::add));
+            payment.getPaymentMethod() == null ? "Other" : payment.getPaymentMethod(),
+            amount(payment.getAmount()), BigDecimal::add));
         List<Map<String, Object>> methodRows = methods.entrySet().stream()
-                .map(entry -> object("name", entry.getKey(), "value", entry.getValue())).toList();
+            .map(entry -> object("name", entry.getKey(), "value", entry.getValue())).toList();
 
         return object("totalRevenue", revenue, "totalRevenueFormatted", currency(revenue),
-                "totalOutstanding", outstandingAmount, "totalOutstandingFormatted", currency(outstandingAmount),
-                "collectionRate", collectionRate, "outstandingInvoicesCount", outstanding.size(),
-                "revenueTrend", revenueTrend(selectedPayments, range), "paymentMethods", methodRows,
-                "outstandingInvoices", object("totalCount", outstanding.size(), "totalAmount", outstandingAmount,
-                        "totalAmountFormatted", currency(outstandingAmount), "rows", outstandingRows));
+            "totalOutstanding", outstandingAmount, "totalOutstandingFormatted", currency(outstandingAmount),
+            "collectionRate", collectionRate, "outstandingInvoicesCount", outstanding.size(),
+            "revenueTrend", revenueTrend(selectedPayments, range), "paymentMethods", methodRows,
+            "outstandingInvoices", object("totalCount", outstanding.size(), "totalAmount", outstandingAmount,
+                "totalAmountFormatted", currency(outstandingAmount), "rows", outstandingRows));
     }
 
     private Map<String, Object> enrollment(
-            List<Student> studentRows,
-            List<SchoolClass> classRows,
-            List<ClassEnrollment> enrollmentRows,
-            Map<Integer, AcademicYear> academicYearById,
-            Map<Integer, Semester> semesterById,
-            Integer academicYearId,
-            Integer semesterId
+        List<Student> studentRows,
+        List<SchoolClass> classRows,
+        List<ClassEnrollment> enrollmentRows,
+        Map<Integer, AcademicYear> academicYearById,
+        Map<Integer, Semester> semesterById,
+        Integer academicYearId,
+        Integer semesterId
     ) {
         long active = studentRows.stream().filter(student -> "Active".equals(student.getStatus())).count();
         long inactive = studentRows.stream().filter(student -> "Inactive".equals(student.getStatus())).count();
         Map<String, Long> statusCounts = studentRows.stream().collect(Collectors.groupingBy(
-                student -> student.getStatus() == null ? "Unknown" : student.getStatus(), TreeMap::new, Collectors.counting()));
+            student -> student.getStatus() == null ? "Unknown" : student.getStatus(), TreeMap::new, Collectors.counting()));
         Map<String, Long> genderCounts = studentRows.stream().filter(student -> student.getGender() == null || !student.getGender().isBlank())
-                .collect(Collectors.groupingBy(student -> student.getGender() == null ? "Unknown" : student.getGender(),
-                        TreeMap::new, Collectors.counting()));
+            .collect(Collectors.groupingBy(student -> student.getGender() == null ? "Unknown" : student.getGender(),
+                TreeMap::new, Collectors.counting()));
         List<Map<String, Object>> capacity = classRows.stream()
-                .filter(schoolClass -> (semesterId == null || semesterId.equals(schoolClass.getSemesterId()))
-                        && (academicYearId == null || academicYearId.equals(schoolClass.getAcademicYearId())))
-                .sorted(Comparator.comparing(SchoolClass::getClassId))
-                .map(schoolClass -> {
-                    long enrolled = enrollmentRows.stream().filter(row -> row.getClassId().equals(schoolClass.getClassId())
-                            && "Active".equals(row.getStatus())).count();
-                    int maximum = schoolClass.getMaxCapacity() == null ? 0 : schoolClass.getMaxCapacity();
-                    AcademicYear year = academicYearById.get(schoolClass.getAcademicYearId());
-                    Semester semester = semesterById.get(schoolClass.getSemesterId());
-                    BigDecimal utilization = maximum > 0
-                            ? BigDecimal.valueOf(enrolled * 100.0 / maximum).setScale(1, RoundingMode.HALF_UP)
-                            : BigDecimal.ZERO;
-                    return object("classId", schoolClass.getClassId(), "className", schoolClass.getClassName(),
-                            "academicYearName", year == null ? "—" : year.getYearName(),
-                            "semesterName", semester == null ? "—" : semester.getSemesterName(),
-                            "maxCapacity", maximum, "enrolled", enrolled,
-                            "available", maximum > 0 ? maximum - enrolled : 0,
-                            "utilizationPercent", utilization);
-                }).toList();
+            .filter(schoolClass -> (semesterId == null || semesterId.equals(schoolClass.getSemesterId()))
+                && (academicYearId == null || academicYearId.equals(schoolClass.getAcademicYearId())))
+            .sorted(Comparator.comparing(SchoolClass::getClassId))
+            .map(schoolClass -> {
+                long enrolled = enrollmentRows.stream().filter(row -> row.getClassId().equals(schoolClass.getClassId())
+                    && "Active".equals(row.getStatus())).count();
+                int maximum = schoolClass.getMaxCapacity() == null ? 0 : schoolClass.getMaxCapacity();
+                AcademicYear year = academicYearById.get(schoolClass.getAcademicYearId());
+                Semester semester = semesterById.get(schoolClass.getSemesterId());
+                BigDecimal utilization = maximum > 0
+                    ? BigDecimal.valueOf(enrolled * 100.0 / maximum).setScale(1, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
+                return object("classId", schoolClass.getClassId(), "className", schoolClass.getClassName(),
+                    "academicYearName", year == null ? "—" : year.getYearName(),
+                    "semesterName", semester == null ? "—" : semester.getSemesterName(),
+                    "maxCapacity", maximum, "enrolled", enrolled,
+                    "available", maximum > 0 ? maximum - enrolled : 0,
+                    "utilizationPercent", utilization);
+            }).toList();
         BigDecimal averageUtilization = capacity.isEmpty() ? BigDecimal.ZERO : capacity.stream()
-                .map(row -> (BigDecimal) row.get("utilizationPercent")).reduce(BigDecimal.ZERO, BigDecimal::add)
-                .divide(BigDecimal.valueOf(capacity.size()), 1, RoundingMode.HALF_UP);
+            .map(row -> (BigDecimal) row.get("utilizationPercent")).reduce(BigDecimal.ZERO, BigDecimal::add)
+            .divide(BigDecimal.valueOf(capacity.size()), 1, RoundingMode.HALF_UP);
         return object("totalStudents", studentRows.size(), "activeStudents", active, "inactiveStudents", inactive,
-                "newStudentsTrend", newStudentsTrend(studentRows),
-                "statusDistribution", distribution(statusCounts), "genderDistribution", distribution(genderCounts),
-                "classCapacity", capacity, "averageUtilization", averageUtilization);
+            "newStudentsTrend", newStudentsTrend(studentRows),
+            "statusDistribution", distribution(statusCounts), "genderDistribution", distribution(genderCounts),
+            "classCapacity", capacity, "averageUtilization", averageUtilization);
     }
 
     private Map<String, Object> academic(
-            List<AttendanceRecord> attendanceRows,
-            Map<Integer, Schedule> scheduleById,
-            Map<Integer, SchoolClass> classById,
-            List<FinalGrade> allFinalGrades,
-            Map<Integer, Subject> subjectById,
-            Integer semesterId,
-            Integer academicYearId
+        List<AttendanceRecord> attendanceRows,
+        Map<Integer, Schedule> scheduleById,
+        Map<Integer, SchoolClass> classById,
+        List<FinalGrade> allFinalGrades,
+        Map<Integer, Subject> subjectById,
+        Integer semesterId,
+        Integer academicYearId
     ) {
         Map<String, Long> allAttendanceCounts = attendanceRows.stream().collect(Collectors.groupingBy(
-                AttendanceRecord::getStatus, Collectors.counting()));
+            AttendanceRecord::getStatus, Collectors.counting()));
         long totalAttendance = attendanceRows.size();
         long present = allAttendanceCounts.getOrDefault("Present", 0L);
         long absent = allAttendanceCounts.getOrDefault("Absent", 0L);
@@ -212,9 +212,9 @@ public class ReportsService {
         BigDecimal absentRate = percent(absent, totalAttendance, 1);
 
         Map<Integer, SchoolClass> selectedClasses = classById.entrySet().stream()
-                .filter(entry -> (semesterId == null || semesterId.equals(entry.getValue().getSemesterId()))
-                        && (academicYearId == null || academicYearId.equals(entry.getValue().getAcademicYearId())))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            .filter(entry -> (semesterId == null || semesterId.equals(entry.getValue().getSemesterId()))
+                && (academicYearId == null || academicYearId.equals(entry.getValue().getAcademicYearId())))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         Map<String, Long> byClassAndStatus = new TreeMap<>();
         for (AttendanceRecord record : attendanceRows) {
             Schedule schedule = scheduleById.get(record.getScheduleId());
@@ -230,8 +230,8 @@ public class ReportsService {
             String status = parts[1];
             SchoolClass schoolClass = selectedClasses.get(id);
             Map<String, Object> row = attendanceByClass.computeIfAbsent(id, ignored -> object(
-                    "classId", id, "className", schoolClass == null ? "—" : schoolClass.getClassName(),
-                    "Present", 0L, "Absent", 0L, "Late", 0L, "Excused", 0L, "total", 0L));
+                "classId", id, "className", schoolClass == null ? "—" : schoolClass.getClassName(),
+                "Present", 0L, "Absent", 0L, "Late", 0L, "Excused", 0L, "total", 0L));
             if (row.containsKey(status)) row.put(status, count);
             row.put("total", ((Number) row.get("total")).longValue() + count);
         });
@@ -242,7 +242,7 @@ public class ReportsService {
         }).toList();
 
         List<FinalGrade> filteredGrades = allFinalGrades.stream()
-                .filter(grade -> semesterId == null || semesterId.equals(grade.getSemesterId())).toList();
+            .filter(grade -> semesterId == null || semesterId.equals(grade.getSemesterId())).toList();
         Map<String, GradeGroup> groups = new TreeMap<>();
         for (FinalGrade grade : filteredGrades) {
             SchoolClass schoolClass = classById.get(grade.getClassId());
@@ -253,48 +253,48 @@ public class ReportsService {
             group.add(grade.getFinalScore());
         }
         List<Map<String, Object>> gradesByClassSubject = groups.values().stream().map(group -> object(
-                "classId", group.schoolClass.getClassId(), "className", group.schoolClass.getClassName(),
-                "subjectId", group.subject.getSubjectId(), "subjectName", group.subject.getSubjectName(),
-                "averageScore", group.average(2), "studentCount", group.count
+            "classId", group.schoolClass.getClassId(), "className", group.schoolClass.getClassName(),
+            "subjectId", group.subject.getSubjectId(), "subjectName", group.subject.getSubjectName(),
+            "averageScore", group.average(2), "studentCount", group.count
         )).toList();
         BigDecimal averageFinal = gradesByClassSubject.isEmpty() ? BigDecimal.ZERO : gradesByClassSubject.stream()
-                .map(row -> (BigDecimal) row.get("averageScore")).reduce(BigDecimal.ZERO, BigDecimal::add)
-                .divide(BigDecimal.valueOf(gradesByClassSubject.size()), 2, RoundingMode.HALF_UP);
+            .map(row -> (BigDecimal) row.get("averageScore")).reduce(BigDecimal.ZERO, BigDecimal::add)
+            .divide(BigDecimal.valueOf(gradesByClassSubject.size()), 2, RoundingMode.HALF_UP);
         Map<String, Long> letterCounts = filteredGrades.stream().filter(grade -> grade.getLetterGrade() != null)
-                .collect(Collectors.groupingBy(FinalGrade::getLetterGrade, Collectors.counting()));
+            .collect(Collectors.groupingBy(FinalGrade::getLetterGrade, Collectors.counting()));
         List<Map<String, Object>> finalGradeDistribution = List.of("A", "B", "C", "D", "F").stream()
-                .map(letter -> object("name", letter, "value", letterCounts.getOrDefault(letter, 0L))).toList();
+            .map(letter -> object("name", letter, "value", letterCounts.getOrDefault(letter, 0L))).toList();
         return object("attendanceSummary", object("present", present, "absent", absent,
-                        "late", allAttendanceCounts.getOrDefault("Late", 0L),
-                        "excused", allAttendanceCounts.getOrDefault("Excused", 0L), "total", totalAttendance,
-                        "presentRate", presentRate, "absentRate", absentRate),
-                "attendanceByClass", attendanceRowsByClass,
-                "gradesByClassSubject", gradesByClassSubject,
-                "finalGradeDistribution", finalGradeDistribution,
-                "averageFinalScore", averageFinal, "totalGradedRecords", filteredGrades.size());
+                "late", allAttendanceCounts.getOrDefault("Late", 0L),
+                "excused", allAttendanceCounts.getOrDefault("Excused", 0L), "total", totalAttendance,
+                "presentRate", presentRate, "absentRate", absentRate),
+            "attendanceByClass", attendanceRowsByClass,
+            "gradesByClassSubject", gradesByClassSubject,
+            "finalGradeDistribution", finalGradeDistribution,
+            "averageFinalScore", averageFinal, "totalGradedRecords", filteredGrades.size());
     }
 
     private Map<String, Object> teacherWorkload(
-            List<Teacher> teacherRows,
-            List<SchoolClass> classRows,
-            List<Schedule> scheduleRows,
-            Map<Integer, TimeSlot> timeSlotById,
-            Integer academicYearId,
-            Integer semesterId
+        List<Teacher> teacherRows,
+        List<SchoolClass> classRows,
+        List<Schedule> scheduleRows,
+        Map<Integer, TimeSlot> timeSlotById,
+        Integer academicYearId,
+        Integer semesterId
     ) {
         List<Teacher> activeTeachers = teacherRows.stream().filter(teacher -> users.findById(teacher.getUserId())
-                .map(user -> user.getStatus() == User.Status.Active).orElse(false)).toList();
+            .map(user -> user.getStatus() == User.Status.Active).orElse(false)).toList();
         List<SchoolClass> filteredClasses = classRows.stream()
-                .filter(schoolClass -> (semesterId == null || semesterId.equals(schoolClass.getSemesterId()))
-                        && (academicYearId == null || academicYearId.equals(schoolClass.getAcademicYearId()))).toList();
+            .filter(schoolClass -> (semesterId == null || semesterId.equals(schoolClass.getSemesterId()))
+                && (academicYearId == null || academicYearId.equals(schoolClass.getAcademicYearId()))).toList();
         Set<Integer> filteredClassIds = filteredClasses.stream().map(SchoolClass::getClassId).collect(Collectors.toSet());
         List<Schedule> filteredSchedules = scheduleRows.stream().filter(schedule -> filteredClassIds.contains(schedule.getClassId())).toList();
         List<Map<String, Object>> workload = new ArrayList<>();
         for (Teacher teacher : activeTeachers) {
             long homeroomCount = filteredClasses.stream()
-                    .filter(schoolClass -> teacher.getTeacherId().equals(schoolClass.getHomeroomTeacherId())).count();
+                .filter(schoolClass -> teacher.getTeacherId().equals(schoolClass.getHomeroomTeacherId())).count();
             List<Schedule> ownSchedules = filteredSchedules.stream()
-                    .filter(schedule -> teacher.getTeacherId().equals(schedule.getTeacherId())).toList();
+                .filter(schedule -> teacher.getTeacherId().equals(schedule.getTeacherId())).toList();
             long scheduledClasses = ownSchedules.stream().map(Schedule::getClassId).distinct().count();
             long uniqueSubjects = ownSchedules.stream().map(Schedule::getSubjectId).distinct().count();
             Map<String, Long> density = new LinkedHashMap<>();
@@ -306,17 +306,17 @@ public class ReportsService {
                 }
             }
             workload.add(object("teacherId", teacher.getTeacherId(),
-                    "teacherName", fullName(teacher.getFirstName(), teacher.getLastName()),
-                    "homeroomClasses", homeroomCount, "scheduledClasses", scheduledClasses,
-                    "uniqueSubjects", uniqueSubjects, "totalWeeklySlots", ownSchedules.size(),
-                    "dailySlotDensity", density));
+                "teacherName", fullName(teacher.getFirstName(), teacher.getLastName()),
+                "homeroomClasses", homeroomCount, "scheduledClasses", scheduledClasses,
+                "uniqueSubjects", uniqueSubjects, "totalWeeklySlots", ownSchedules.size(),
+                "dailySlotDensity", density));
         }
         BigDecimal averageClasses = meanLong(workload, "scheduledClasses", activeTeachers.size());
         BigDecimal averageSlots = meanLong(workload, "totalWeeklySlots", activeTeachers.size());
         BigDecimal averageSubjects = meanLong(workload, "uniqueSubjects", activeTeachers.size());
         return object("totalTeachers", activeTeachers.size(), "averageClassesPerTeacher", averageClasses,
-                "averageScheduleSlotsPerTeacher", averageSlots, "averageSubjectsPerTeacher", averageSubjects,
-                "workload", workload);
+            "averageScheduleSlotsPerTeacher", averageSlots, "averageSubjectsPerTeacher", averageSubjects,
+            "workload", workload);
     }
 
     private Map<String, Object> revenueTrend(List<Payment> rows, String range) {
@@ -355,9 +355,9 @@ public class ReportsService {
         LocalDate today = LocalDate.now();
         LocalDate first = today.withDayOfMonth(1).minusMonths(5);
         Map<String, Long> counts = rows.stream().filter(student -> student.getEnrollmentDate() != null
-                        && !student.getEnrollmentDate().isBefore(first))
-                .collect(Collectors.groupingBy(student -> student.getEnrollmentDate().format(DateTimeFormatter.ofPattern("yyyy-MM")),
-                        Collectors.counting()));
+                && !student.getEnrollmentDate().isBefore(first))
+            .collect(Collectors.groupingBy(student -> student.getEnrollmentDate().format(DateTimeFormatter.ofPattern("yyyy-MM")),
+                Collectors.counting()));
         List<String> labels = new ArrayList<>();
         List<Long> data = new ArrayList<>();
         for (int i = 5; i >= 0; i--) {
@@ -400,7 +400,7 @@ public class ReportsService {
 
     private static BigDecimal percent(long value, long total, int scale) {
         return total == 0 ? BigDecimal.ZERO
-                : BigDecimal.valueOf(value).multiply(BigDecimal.valueOf(100)).divide(BigDecimal.valueOf(total), scale, RoundingMode.HALF_UP);
+            : BigDecimal.valueOf(value).multiply(BigDecimal.valueOf(100)).divide(BigDecimal.valueOf(total), scale, RoundingMode.HALF_UP);
     }
 
     private static BigDecimal amount(BigDecimal amount) {
@@ -409,7 +409,7 @@ public class ReportsService {
 
     private static String currency(BigDecimal amount) {
         return "$" + amount(amount).setScale(2, RoundingMode.HALF_UP).toPlainString()
-                .replaceAll("\\B(?=(\\d{3})+(?!\\d))", ",");
+            .replaceAll("\\B(?=(\\d{3})+(?!\\d))", ",");
     }
 
     private static String fullName(String first, String last) {

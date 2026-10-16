@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import jakarta.persistence.LockModeType;
+
 import java.util.List;
 
 public interface InvoiceRepository extends JpaRepository<Invoice, Integer> {

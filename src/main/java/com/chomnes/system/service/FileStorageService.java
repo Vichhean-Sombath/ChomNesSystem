@@ -19,18 +19,18 @@ import java.util.UUID;
 public class FileStorageService {
     private static final long MAX_FILE_SIZE = 25L * 1024 * 1024;
     private static final Map<String, String> CONTENT_TYPES = Map.ofEntries(
-            Map.entry("pdf", "application/pdf"),
-            Map.entry("png", "image/png"),
-            Map.entry("jpg", "image/jpeg"), Map.entry("jpeg", "image/jpeg"),
-            Map.entry("gif", "image/gif"),
-            Map.entry("doc", "application/msword"),
-            Map.entry("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
-            Map.entry("ppt", "application/vnd.ms-powerpoint"),
-            Map.entry("pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation"),
-            Map.entry("xls", "application/vnd.ms-excel"),
-            Map.entry("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
-            Map.entry("csv", "text/csv"), Map.entry("txt", "text/plain"),
-            Map.entry("mp4", "video/mp4")
+        Map.entry("pdf", "application/pdf"),
+        Map.entry("png", "image/png"),
+        Map.entry("jpg", "image/jpeg"), Map.entry("jpeg", "image/jpeg"),
+        Map.entry("gif", "image/gif"),
+        Map.entry("doc", "application/msword"),
+        Map.entry("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+        Map.entry("ppt", "application/vnd.ms-powerpoint"),
+        Map.entry("pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation"),
+        Map.entry("xls", "application/vnd.ms-excel"),
+        Map.entry("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+        Map.entry("csv", "text/csv"), Map.entry("txt", "text/plain"),
+        Map.entry("mp4", "video/mp4")
     );
     private final Path root;
 
@@ -78,9 +78,13 @@ public class FileStorageService {
     public void discard(StoredFile file) {
         try {
             Files.deleteIfExists(root.resolve(file.fileName()).normalize());
-        } catch (IOException ignored) { }
+        } catch (IOException ignored) {
+        }
     }
 
-    public record StoredFile(String fileName, String url, String contentType, String originalName, long size) {}
-    public record StoredFileInfo(Path path, String contentType, String fileName) {}
+    public record StoredFile(String fileName, String url, String contentType, String originalName, long size) {
+    }
+
+    public record StoredFileInfo(Path path, String contentType, String fileName) {
+    }
 }

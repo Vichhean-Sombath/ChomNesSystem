@@ -12,7 +12,6 @@ import com.chomnes.system.exception.SemesterNotFoundException;
 import com.chomnes.system.model.ClassEnrollment;
 import com.chomnes.system.model.FeeStructure;
 import com.chomnes.system.model.Invoice;
-import com.chomnes.system.model.SchoolClass;
 import com.chomnes.system.model.Student;
 import com.chomnes.system.model.User;
 import com.chomnes.system.repository.ClassEnrollmentRepository;
@@ -41,12 +40,12 @@ public class InvoiceService {
     private final SemesterRepository semesterRepository;
 
     public InvoiceService(
-            InvoiceRepository invoiceRepository,
-            FeeStructureRepository feeStructureRepository,
-            StudentRepository studentRepository,
-            ClassEnrollmentRepository enrollmentRepository,
-            SchoolClassRepository schoolClassRepository,
-            SemesterRepository semesterRepository
+        InvoiceRepository invoiceRepository,
+        FeeStructureRepository feeStructureRepository,
+        StudentRepository studentRepository,
+        ClassEnrollmentRepository enrollmentRepository,
+        SchoolClassRepository schoolClassRepository,
+        SemesterRepository semesterRepository
     ) {
         this.invoiceRepository = invoiceRepository;
         this.feeStructureRepository = feeStructureRepository;
@@ -60,15 +59,15 @@ public class InvoiceService {
     public List<InvoiceResponse> findAll(Integer requesterId, User.Role requesterRole) {
         if (requesterRole == User.Role.Admin) {
             return invoiceRepository.findAllByOrderByCreatedAtDescInvoiceIdDesc().stream()
-                    .map(InvoiceResponse::from)
-                    .toList();
+                .map(InvoiceResponse::from)
+                .toList();
         }
         if (requesterRole == User.Role.Student) {
             Student student = getStudentForUser(requesterId);
             return invoiceRepository.findAllByStudentIdOrderByCreatedAtDescInvoiceIdDesc(student.getStudentId())
-                    .stream()
-                    .map(InvoiceResponse::from)
-                    .toList();
+                .stream()
+                .map(InvoiceResponse::from)
+                .toList();
         }
         throw new AccessDeniedException("You cannot access invoices.");
     }
@@ -76,7 +75,7 @@ public class InvoiceService {
     @Transactional(readOnly = true)
     public InvoiceResponse findById(Integer invoiceId, Integer requesterId, User.Role requesterRole) {
         Invoice invoice = invoiceRepository.findById(invoiceId)
-                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
+            .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
         if (requesterRole == User.Role.Admin) {
             return InvoiceResponse.from(invoice);
         }
@@ -96,13 +95,13 @@ public class InvoiceService {
 
     public InvoiceResponse create(CreateInvoiceRequest request, boolean allowMultipleStudentFeeInvoices) {
         Student student = studentRepository.findById(request.studentId())
-                .orElseThrow(() -> new StudentNotFoundException(request.studentId()));
+            .orElseThrow(() -> new StudentNotFoundException(request.studentId()));
         FeeStructure fee = feeStructureRepository.findById(request.feeId())
-                .orElseThrow(() -> new FeeStructureNotFoundException(request.feeId()));
+            .orElseThrow(() -> new FeeStructureNotFoundException(request.feeId()));
 
         validateEnrollment(student.getStudentId(), fee);
         if (!allowMultipleStudentFeeInvoices
-                && invoiceRepository.existsByStudentIdAndFeeId(student.getStudentId(), fee.getFeeId())) {
+            && invoiceRepository.existsByStudentIdAndFeeId(student.getStudentId(), fee.getFeeId())) {
             throw new InvoiceConflictException("An invoice already exists for this student and fee.");
         }
         var dueDate = request.dueDate() == null ? fee.getDueDate() : request.dueDate();
@@ -114,7 +113,7 @@ public class InvoiceService {
         }
 
         String invoiceNumber = request.invoiceNumber() == null
-                ? generateInvoiceNumber(request.issueDate()) : request.invoiceNumber().trim();
+            ? generateInvoiceNumber(request.issueDate()) : request.invoiceNumber().trim();
         if (invoiceNumber.isBlank()) throw new IllegalArgumentException("Invoice number must not be blank.");
         if (invoiceRepository.existsByInvoiceNumber(invoiceNumber)) {
             throw new InvoiceConflictException("Invoice number already exists.");
@@ -122,19 +121,19 @@ public class InvoiceService {
         Integer semesterId = request.semesterId() == null ? fee.getSemesterId() : request.semesterId();
         if (!semesterRepository.existsById(semesterId)) throw new SemesterNotFoundException(semesterId);
         Invoice invoice = new Invoice(
-                invoiceNumber,
-                student.getStudentId(),
-                fee.getFeeId(),
-                semesterId,
-                request.issueDate(),
-                dueDate,
-                request.totalAmount() == null ? fee.getAmount() : request.totalAmount()
+            invoiceNumber,
+            student.getStudentId(),
+            fee.getFeeId(),
+            semesterId,
+            request.issueDate(),
+            dueDate,
+            request.totalAmount() == null ? fee.getAmount() : request.totalAmount()
         );
         var amountPaid = request.amountPaid() == null ? java.math.BigDecimal.ZERO : request.amountPaid();
         invoice.setAmountPaid(amountPaid);
         invoice.setStatus(request.status() != null ? request.status()
-                : amountPaid.compareTo(invoice.getTotalAmount()) >= 0 ? "Paid"
-                : amountPaid.signum() > 0 ? "Partial" : "Unpaid");
+            : amountPaid.compareTo(invoice.getTotalAmount()) >= 0 ? "Paid"
+            : amountPaid.signum() > 0 ? "Partial" : "Unpaid");
         return InvoiceResponse.from(invoiceRepository.save(invoice));
     }
 
@@ -143,7 +142,7 @@ public class InvoiceService {
             throw new IllegalArgumentException("Provide at least one invoice field to update.");
         }
         Invoice invoice = invoiceRepository.findById(invoiceId)
-                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
+            .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
         Integer studentId = request.studentId() == null ? invoice.getStudentId() : request.studentId();
         Integer feeId = request.feeId() == null ? invoice.getFeeId() : request.feeId();
         Integer semesterId = request.semesterId() == null ? invoice.getSemesterId() : request.semesterId();
@@ -154,17 +153,18 @@ public class InvoiceService {
         String invoiceNumber = request.invoiceNumber() == null ? invoice.getInvoiceNumber() : request.invoiceNumber().trim();
         if (invoiceNumber.isBlank()) throw new IllegalArgumentException("Invoice number must not be blank.");
         if (!invoiceNumber.equals(invoice.getInvoiceNumber())
-                && invoiceRepository.existsByInvoiceNumberAndInvoiceIdNot(invoiceNumber, invoiceId)) {
+            && invoiceRepository.existsByInvoiceNumberAndInvoiceIdNot(invoiceNumber, invoiceId)) {
             throw new InvoiceConflictException("Invoice number already exists.");
         }
         var issueDate = request.issueDate() == null ? invoice.getIssueDate() : request.issueDate();
         var dueDate = request.dueDate() == null ? invoice.getDueDate() : request.dueDate();
-        if (dueDate.isBefore(issueDate)) throw new InvoiceConflictException("Invoice due date cannot be before its issue date.");
+        if (dueDate.isBefore(issueDate))
+            throw new InvoiceConflictException("Invoice due date cannot be before its issue date.");
         var total = request.totalAmount() == null ? invoice.getTotalAmount() : request.totalAmount();
         var paid = request.amountPaid() == null ? invoice.getAmountPaid() : request.amountPaid();
         String status = request.status() == null
-                ? paid.compareTo(total) >= 0 ? "Paid" : paid.signum() > 0 ? "Partial" : "Unpaid"
-                : request.status();
+            ? paid.compareTo(total) >= 0 ? "Paid" : paid.signum() > 0 ? "Partial" : "Unpaid"
+            : request.status();
 
         invoice.setInvoiceNumber(invoiceNumber);
         invoice.setStudentId(studentId);
@@ -180,7 +180,7 @@ public class InvoiceService {
 
     private void validateEnrollment(Integer studentId, FeeStructure fee) {
         List<ClassEnrollment> enrollments = enrollmentRepository
-                .findAllByStudentIdOrderByEnrollmentDateDescEnrollmentIdAsc(studentId);
+            .findAllByStudentIdOrderByEnrollmentDateDescEnrollmentIdAsc(studentId);
         if (fee.getClassId() != null) {
             if (!schoolClassRepository.existsById(fee.getClassId())) {
                 throw new SchoolClassNotFoundException(fee.getClassId());
@@ -193,7 +193,7 @@ public class InvoiceService {
 
         List<Integer> classIds = enrollments.stream().map(ClassEnrollment::getClassId).distinct().toList();
         boolean enrolledInSemester = schoolClassRepository.findAllById(classIds).stream()
-                .anyMatch(schoolClass -> schoolClass.getSemesterId().equals(fee.getSemesterId()));
+            .anyMatch(schoolClass -> schoolClass.getSemesterId().equals(fee.getSemesterId()));
         if (!enrolledInSemester) {
             throw new InvoiceConflictException("The student must be enrolled in a class for the fee's semester.");
         }
@@ -201,19 +201,19 @@ public class InvoiceService {
 
     public void delete(Integer invoiceId) {
         invoiceRepository.findById(invoiceId)
-                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
+            .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
         invoiceRepository.deleteById(invoiceId);
     }
 
     private Student getStudentForUser(Integer userId) {
         return studentRepository.findByUserId(userId)
-                .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
+            .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
     }
 
     private String generateInvoiceNumber(java.time.LocalDate issueDate) {
         String uniquePart = UUID.randomUUID().toString().replace("-", "")
-                .substring(0, 12)
-                .toUpperCase(Locale.ROOT);
+            .substring(0, 12)
+            .toUpperCase(Locale.ROOT);
         return "INV-" + issueDate.format(DateTimeFormatter.BASIC_ISO_DATE) + "-" + uniquePart;
     }
 }

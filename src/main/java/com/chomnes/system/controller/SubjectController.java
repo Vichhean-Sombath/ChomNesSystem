@@ -43,16 +43,16 @@ public class SubjectController {
     public ResponseEntity<SubjectResponse> create(@Valid @RequestBody CreateSubjectRequest request) {
         SubjectResponse created = subjectService.create(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{subjectId}")
-                .buildAndExpand(created.subjectId())
-                .toUri();
+            .path("/{subjectId}")
+            .buildAndExpand(created.subjectId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping({"/{subjectId}", "/update/{subjectId}"})
     public SubjectResponse update(
-            @PathVariable Integer subjectId,
-            @Valid @RequestBody UpdateSubjectRequest request
+        @PathVariable Integer subjectId,
+        @Valid @RequestBody UpdateSubjectRequest request
     ) {
         return subjectService.update(subjectId, request);
     }

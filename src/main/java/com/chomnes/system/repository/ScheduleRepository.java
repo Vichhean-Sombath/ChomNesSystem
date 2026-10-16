@@ -17,9 +17,9 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Integer> {
     boolean existsByRoomNumberAndTimeSlotId(String roomNumber, Integer timeSlotId);
 
     boolean existsByRoomNumberAndTimeSlotIdAndScheduleIdNot(
-            String roomNumber,
-            Integer timeSlotId,
-            Integer scheduleId
+        String roomNumber,
+        Integer timeSlotId,
+        Integer scheduleId
     );
 
     List<Schedule> findAllByTeacherId(Integer teacherId);

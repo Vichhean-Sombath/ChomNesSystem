@@ -1,19 +1,22 @@
-# Maven build output
-target/
-
-# Compiled Java files
+# Maven and Java build output
+/target/
+/build/
+/out/
 *.class
+*.jar
+*.war
+*.ear
 
 # IDE files
 .idea/
 .vscode/
 .settings/
+*.iml
 .project
 .classpath
 .factorypath
-*.iml
 
-# Local environment and secret configuration
+# Local secrets and machine-specific Spring configuration
 .env
 .env.*
 !.env.example
@@ -26,6 +29,13 @@ application-local.yaml
 logs/
 *.pid
 
-# OS files
+# Editor temporary files
+*.swp
+*.swo
+*~
+*.tmp
+
+# Operating system files
 .DS_Store
 Thumbs.db
+Desktop.ini

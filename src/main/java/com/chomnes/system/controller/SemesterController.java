@@ -43,16 +43,16 @@ public class SemesterController {
     public ResponseEntity<SemesterResponse> create(@Valid @RequestBody CreateSemesterRequest request) {
         SemesterResponse created = semesterService.create(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{semesterId}")
-                .buildAndExpand(created.semesterId())
-                .toUri();
+            .path("/{semesterId}")
+            .buildAndExpand(created.semesterId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping({"/{semesterId}", "/update/{semesterId}"})
     public SemesterResponse update(
-            @PathVariable Integer semesterId,
-            @Valid @RequestBody UpdateSemesterRequest request
+        @PathVariable Integer semesterId,
+        @Valid @RequestBody UpdateSemesterRequest request
     ) {
         return semesterService.update(semesterId, request);
     }

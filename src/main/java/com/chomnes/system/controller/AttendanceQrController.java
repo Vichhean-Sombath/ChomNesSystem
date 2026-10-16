@@ -7,7 +7,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -23,8 +22,8 @@ public class AttendanceQrController {
 
     @PostMapping({"/api/attendance-records/{scheduleId}/qr", "/attendance-record/qr/{scheduleId}"})
     public Map<String, Object> issue(
-            @PathVariable Integer scheduleId,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable Integer scheduleId,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return attendanceQrService.issue(scheduleId, requesterId(principal), requesterRole(principal));
     }

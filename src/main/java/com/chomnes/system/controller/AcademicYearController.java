@@ -43,16 +43,16 @@ public class AcademicYearController {
     public ResponseEntity<AcademicYearResponse> create(@Valid @RequestBody CreateAcademicYearRequest request) {
         AcademicYearResponse created = academicYearService.create(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{academicYearId}")
-                .buildAndExpand(created.academicYearId())
-                .toUri();
+            .path("/{academicYearId}")
+            .buildAndExpand(created.academicYearId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping({"/{academicYearId}", "/update/{academicYearId}"})
     public AcademicYearResponse update(
-            @PathVariable Integer academicYearId,
-            @Valid @RequestBody UpdateAcademicYearRequest request
+        @PathVariable Integer academicYearId,
+        @Valid @RequestBody UpdateAcademicYearRequest request
     ) {
         return academicYearService.update(academicYearId, request);
     }

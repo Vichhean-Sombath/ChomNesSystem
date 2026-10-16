@@ -55,9 +55,9 @@ public class AuthController {
 
     @PutMapping({"/password", "/change-password"})
     public Object changePassword(
-            @Valid @RequestBody ChangePasswordRequest request,
-            @AuthenticationPrincipal Jwt principal,
-            HttpServletRequest servletRequest
+        @Valid @RequestBody ChangePasswordRequest request,
+        @AuthenticationPrincipal Jwt principal,
+        HttpServletRequest servletRequest
     ) {
         authService.changePassword(Integer.valueOf(principal.getSubject()), request);
         if ("/user/change-password".equals(servletRequest.getRequestURI())) {

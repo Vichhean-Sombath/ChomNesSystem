@@ -21,7 +21,6 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping({"/api/users", "/user"})
@@ -39,39 +38,39 @@ public class UserController {
 
     @GetMapping("/{userId}")
     public UserResponse findById(
-            @PathVariable("userId") Integer userId,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable("userId") Integer userId,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return userService.findById(userId, requesterId(principal), isAdministrator(principal));
     }
 
     @PostMapping({"", "/create"})
     public ResponseEntity<UserResponse> create(
-            @Valid @RequestBody CreateUserRequest request,
-            HttpServletRequest servletRequest
+        @Valid @RequestBody CreateUserRequest request,
+        HttpServletRequest servletRequest
     ) {
         UserResponse created = userService.create(request, servletRequest.getRequestURI().startsWith("/user/"));
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{userId}")
-                .buildAndExpand(created.userId())
-                .toUri();
+            .path("/{userId}")
+            .buildAndExpand(created.userId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping({"/{userId}", "/update/{userId}"})
     public UserResponse update(
-            @PathVariable("userId") Integer userId,
-            @Valid @RequestBody UpdateUserRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable("userId") Integer userId,
+        @Valid @RequestBody UpdateUserRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return userService.update(userId, request, requesterId(principal), isAdministrator(principal));
     }
 
     @DeleteMapping({"/{userId}", "/disable/{userId}"})
     public Object deactivate(
-            @PathVariable("userId") Integer userId,
-            @AuthenticationPrincipal Jwt principal,
-            HttpServletRequest servletRequest
+        @PathVariable("userId") Integer userId,
+        @AuthenticationPrincipal Jwt principal,
+        HttpServletRequest servletRequest
     ) {
         UserResponse deactivated = userService.deactivate(userId, requesterId(principal));
         if (servletRequest.getRequestURI().startsWith("/user/disable/")) {

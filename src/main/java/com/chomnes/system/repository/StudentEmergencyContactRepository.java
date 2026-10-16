@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public interface StudentEmergencyContactRepository extends JpaRepository<StudentEmergencyContact, Integer> {
     Optional<StudentEmergencyContact> findFirstByStudentIdAndEmailIsNotNullOrderByContactIdAsc(Integer studentId);
+
     List<StudentEmergencyContact> findAllByOrderByContactNameAscContactIdAsc();
 
     List<StudentEmergencyContact> findAllByStudentIdOrderByContactNameAscContactIdAsc(Integer studentId);

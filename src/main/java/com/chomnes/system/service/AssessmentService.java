@@ -3,15 +3,12 @@ package com.chomnes.system.service;
 import com.chomnes.system.dto.AssessmentResponse;
 import com.chomnes.system.dto.CreateAssessmentRequest;
 import com.chomnes.system.dto.UpdateAssessmentRequest;
-import com.chomnes.system.exception.AcademicYearNotFoundException;
 import com.chomnes.system.exception.AssessmentConflictException;
 import com.chomnes.system.exception.AssessmentNotFoundException;
 import com.chomnes.system.exception.GradingCriterionNotFoundException;
 import com.chomnes.system.exception.ScheduleNotFoundException;
 import com.chomnes.system.exception.SchoolClassNotFoundException;
 import com.chomnes.system.exception.SemesterNotFoundException;
-import com.chomnes.system.exception.StudentNotFoundException;
-import com.chomnes.system.exception.TeacherNotFoundException;
 import com.chomnes.system.model.Assessment;
 import com.chomnes.system.model.ClassEnrollment;
 import com.chomnes.system.model.GradingCriterion;
@@ -49,14 +46,14 @@ public class AssessmentService {
     private final ClassEnrollmentRepository enrollmentRepository;
 
     public AssessmentService(
-            AssessmentRepository assessmentRepository,
-            ScheduleRepository scheduleRepository,
-            GradingCriterionRepository criterionRepository,
-            SchoolClassRepository schoolClassRepository,
-            SemesterRepository semesterRepository,
-            TeacherRepository teacherRepository,
-            StudentRepository studentRepository,
-            ClassEnrollmentRepository enrollmentRepository
+        AssessmentRepository assessmentRepository,
+        ScheduleRepository scheduleRepository,
+        GradingCriterionRepository criterionRepository,
+        SchoolClassRepository schoolClassRepository,
+        SemesterRepository semesterRepository,
+        TeacherRepository teacherRepository,
+        StudentRepository studentRepository,
+        ClassEnrollmentRepository enrollmentRepository
     ) {
         this.assessmentRepository = assessmentRepository;
         this.scheduleRepository = scheduleRepository;
@@ -72,9 +69,9 @@ public class AssessmentService {
     public List<AssessmentResponse> findAll(Integer requesterId, User.Role requesterRole) {
         if (requesterRole == User.Role.Admin) {
             return assessmentRepository.findAllByOrderByAssessmentDateDescAssessmentIdDesc()
-                    .stream()
-                    .map(AssessmentResponse::from)
-                    .toList();
+                .stream()
+                .map(AssessmentResponse::from)
+                .toList();
         }
 
         List<Integer> scheduleIds = visibleScheduleIds(requesterId, requesterRole);
@@ -82,9 +79,9 @@ public class AssessmentService {
             return List.of();
         }
         return assessmentRepository.findAllByScheduleIdInOrderByAssessmentDateAscAssessmentIdAsc(scheduleIds)
-                .stream()
-                .map(AssessmentResponse::from)
-                .toList();
+            .stream()
+            .map(AssessmentResponse::from)
+            .toList();
     }
 
     @Transactional(readOnly = true)
@@ -95,29 +92,29 @@ public class AssessmentService {
     }
 
     public AssessmentResponse create(
-            CreateAssessmentRequest request,
-            Integer requesterId,
-            User.Role requesterRole
+        CreateAssessmentRequest request,
+        Integer requesterId,
+        User.Role requesterRole
     ) {
         Schedule schedule = getSchedule(request.scheduleId());
         authorizeManageSchedule(schedule, requesterId, requesterRole);
         validateCriterion(request.criteriaId(), schedule);
         validateAssessmentDate(schedule, request.assessmentDate());
         Assessment assessment = new Assessment(
-                schedule.getScheduleId(),
-                request.criteriaId(),
-                requireNonBlank(request.assessmentName()),
-                request.maxScore(),
-                request.assessmentDate()
+            schedule.getScheduleId(),
+            request.criteriaId(),
+            requireNonBlank(request.assessmentName()),
+            request.maxScore(),
+            request.assessmentDate()
         );
         return AssessmentResponse.from(assessmentRepository.save(assessment));
     }
 
     public AssessmentResponse update(
-            Integer assessmentId,
-            UpdateAssessmentRequest request,
-            Integer requesterId,
-            User.Role requesterRole
+        Integer assessmentId,
+        UpdateAssessmentRequest request,
+        Integer requesterId,
+        User.Role requesterRole
     ) {
         if (request.isEmpty()) {
             throw new IllegalArgumentException("Provide at least one assessment field to update.");
@@ -135,15 +132,15 @@ public class AssessmentService {
             throw new AccessDeniedException("Teachers cannot move an assessment to another schedule.");
         }
         Schedule schedule = scheduleId.equals(assessment.getScheduleId())
-                ? currentSchedule
-                : getSchedule(scheduleId);
+            ? currentSchedule
+            : getSchedule(scheduleId);
         authorizeManageSchedule(schedule, requesterId, requesterRole);
 
         Integer criteriaId = request.criteriaId() == null ? assessment.getCriteriaId() : request.criteriaId();
         validateCriterion(criteriaId, schedule);
         LocalDate assessmentDate = Boolean.TRUE.equals(request.clearAssessmentDate())
-                ? null
-                : request.assessmentDate() == null ? assessment.getAssessmentDate() : request.assessmentDate();
+            ? null
+            : request.assessmentDate() == null ? assessment.getAssessmentDate() : request.assessmentDate();
         validateAssessmentDate(schedule, assessmentDate);
 
         assessment.setScheduleId(schedule.getScheduleId());
@@ -165,37 +162,37 @@ public class AssessmentService {
 
     private Assessment getAssessment(Integer assessmentId) {
         return assessmentRepository.findById(assessmentId)
-                .orElseThrow(() -> new AssessmentNotFoundException(assessmentId));
+            .orElseThrow(() -> new AssessmentNotFoundException(assessmentId));
     }
 
     private Schedule getSchedule(Integer scheduleId) {
         return scheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));
+            .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));
     }
 
     private List<Integer> visibleScheduleIds(Integer requesterId, User.Role requesterRole) {
         if (requesterRole == User.Role.Teacher) {
             Teacher teacher = getActiveTeacherForUser(requesterId);
             return scheduleRepository.findAllByTeacherId(teacher.getTeacherId())
-                    .stream()
-                    .map(Schedule::getScheduleId)
-                    .toList();
+                .stream()
+                .map(Schedule::getScheduleId)
+                .toList();
         }
         if (requesterRole == User.Role.Student) {
             Student student = getStudentForUser(requesterId);
             List<Integer> classIds = enrollmentRepository
-                    .findAllByStudentIdOrderByEnrollmentDateDescEnrollmentIdAsc(student.getStudentId())
-                    .stream()
-                    .map(ClassEnrollment::getClassId)
-                    .distinct()
-                    .toList();
+                .findAllByStudentIdOrderByEnrollmentDateDescEnrollmentIdAsc(student.getStudentId())
+                .stream()
+                .map(ClassEnrollment::getClassId)
+                .distinct()
+                .toList();
             if (classIds.isEmpty()) {
                 return List.of();
             }
             return scheduleRepository.findAllByClassIdIn(classIds)
-                    .stream()
-                    .map(Schedule::getScheduleId)
-                    .toList();
+                .stream()
+                .map(Schedule::getScheduleId)
+                .toList();
         }
         throw new AccessDeniedException("You cannot access assessments.");
     }
@@ -215,7 +212,7 @@ public class AssessmentService {
         if (requesterRole == User.Role.Student) {
             Student student = getStudentForUser(requesterId);
             if (!enrollmentRepository.existsByStudentIdAndClassId(
-                    student.getStudentId(), schedule.getClassId()
+                student.getStudentId(), schedule.getClassId()
             )) {
                 throw new AccessDeniedException("Students can only access assessments for their enrolled classes.");
             }
@@ -239,7 +236,7 @@ public class AssessmentService {
 
     private void validateCriterion(Integer criteriaId, Schedule schedule) {
         GradingCriterion criterion = criterionRepository.findById(criteriaId)
-                .orElseThrow(() -> new GradingCriterionNotFoundException(criteriaId));
+            .orElseThrow(() -> new GradingCriterionNotFoundException(criteriaId));
         if (criterion.getSubjectId() != null && !criterion.getSubjectId().equals(schedule.getSubjectId())) {
             throw new AssessmentConflictException("The grading criterion is not configured for this subject.");
         }
@@ -253,9 +250,9 @@ public class AssessmentService {
             return;
         }
         SchoolClass schoolClass = schoolClassRepository.findById(schedule.getClassId())
-                .orElseThrow(() -> new SchoolClassNotFoundException(schedule.getClassId()));
+            .orElseThrow(() -> new SchoolClassNotFoundException(schedule.getClassId()));
         Semester semester = semesterRepository.findById(schoolClass.getSemesterId())
-                .orElseThrow(() -> new SemesterNotFoundException(schoolClass.getSemesterId()));
+            .orElseThrow(() -> new SemesterNotFoundException(schoolClass.getSemesterId()));
         if (assessmentDate.isBefore(semester.getStartDate()) || assessmentDate.isAfter(semester.getEndDate())) {
             throw new AssessmentConflictException("Assessment date must fall within the class semester.");
         }
@@ -263,7 +260,7 @@ public class AssessmentService {
 
     private Teacher getActiveTeacherForUser(Integer userId) {
         Teacher teacher = teacherRepository.findByUserId(userId)
-                .orElseThrow(() -> new AccessDeniedException("No teacher profile is associated with this account."));
+            .orElseThrow(() -> new AccessDeniedException("No teacher profile is associated with this account."));
         if (!"Active".equals(teacher.getStatus())) {
             throw new AccessDeniedException("This teacher profile is inactive.");
         }
@@ -272,7 +269,7 @@ public class AssessmentService {
 
     private Student getStudentForUser(Integer userId) {
         return studentRepository.findByUserId(userId)
-                .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
+            .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
     }
 
     private String requireNonBlank(String value) {

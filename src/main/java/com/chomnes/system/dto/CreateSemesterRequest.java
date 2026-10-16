@@ -8,9 +8,9 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
 public record CreateSemesterRequest(
-        @NotNull @Positive Integer academicYearId,
-        @NotBlank @Size(max = 30) String semesterName,
-        @NotNull LocalDate startDate,
-        @NotNull LocalDate endDate
+    @NotNull @Positive Integer academicYearId,
+    @NotBlank @Size(max = 30) String semesterName,
+    @NotNull LocalDate startDate,
+    @NotNull LocalDate endDate
 ) {
 }

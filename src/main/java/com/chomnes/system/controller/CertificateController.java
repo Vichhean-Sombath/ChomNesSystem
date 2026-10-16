@@ -42,31 +42,31 @@ public class CertificateController {
 
     @GetMapping({"/{certificateId}", "/data/{certificateId}"})
     public CertificateResponse findById(
-            @PathVariable Integer certificateId,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable Integer certificateId,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return certificateService.findById(certificateId, requesterId(principal), requesterRole(principal));
     }
 
     @PostMapping({"", "/create"})
     public ResponseEntity<CertificateResponse> issue(
-            @Valid @RequestBody CreateCertificateRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @Valid @RequestBody CreateCertificateRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         CertificateResponse created = certificateService.issue(
-                request, requesterId(principal), requesterRole(principal)
+            request, requesterId(principal), requesterRole(principal)
         );
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{certificateId}")
-                .buildAndExpand(created.certificateId())
-                .toUri();
+            .path("/{certificateId}")
+            .buildAndExpand(created.certificateId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 
     @PostMapping({"/{certificateId}/file", "/upload/{certificateId}"})
     public Map<String, Object> uploadFile(
-            @PathVariable Integer certificateId,
-            @RequestPart("file") org.springframework.web.multipart.MultipartFile file
+        @PathVariable Integer certificateId,
+        @RequestPart("file") org.springframework.web.multipart.MultipartFile file
     ) {
         FileStorageService.StoredFile stored = files.store(file);
         try {

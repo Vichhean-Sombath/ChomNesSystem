@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+
 import java.math.BigDecimal;
 
 @Entity
@@ -39,11 +40,11 @@ public class GradingCriterion {
     }
 
     public GradingCriterion(
-            Integer subjectId,
-            Integer classId,
-            String componentName,
-            BigDecimal weightPercentage,
-            Integer attemptCount
+        Integer subjectId,
+        Integer classId,
+        String componentName,
+        BigDecimal weightPercentage,
+        Integer attemptCount
     ) {
         this.subjectId = subjectId;
         this.classId = classId;

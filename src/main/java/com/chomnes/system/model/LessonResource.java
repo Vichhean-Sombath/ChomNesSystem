@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -55,12 +56,12 @@ public class LessonResource {
     }
 
     public LessonResource(
-            Integer scheduleId,
-            Integer teacherId,
-            String title,
-            String description,
-            String resourceType,
-            String fileUrl
+        Integer scheduleId,
+        Integer teacherId,
+        String title,
+        String description,
+        String resourceType,
+        String fileUrl
     ) {
         this.scheduleId = scheduleId;
         this.teacherId = teacherId;

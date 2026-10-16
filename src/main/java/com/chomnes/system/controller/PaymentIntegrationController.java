@@ -37,11 +37,11 @@ public class PaymentIntegrationController {
 
     @PostMapping("/stripe/checkout")
     public Map<String, Object> stripeCheckout(
-            @Valid @RequestBody StripeCheckoutRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @Valid @RequestBody StripeCheckoutRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return integrations.createStripeCheckout(request.invoiceId(), request.successUrl(), request.cancelUrl(),
-                requesterId(principal), requesterRole(principal));
+            requesterId(principal), requesterRole(principal));
     }
 
     @GetMapping("/stripe/success")
@@ -56,25 +56,27 @@ public class PaymentIntegrationController {
 
     @PostMapping("/stripe/verify")
     public PaymentResponse stripeVerify(
-            @Valid @RequestBody StripeVerifyRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @Valid @RequestBody StripeVerifyRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return integrations.verifyStripeCheckout(request.sessionId(), requesterId(principal), requesterRole(principal));
     }
 
-    /** This compatibility route requires a real Stripe session; it never trusts a client-supplied invoice as proof. */
+    /**
+     * This compatibility route requires a real Stripe session; it never trusts a client-supplied invoice as proof.
+     */
     @PostMapping("/stripe/record")
     public PaymentResponse stripeRecord(
-            @Valid @RequestBody StripeVerifyRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @Valid @RequestBody StripeVerifyRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return integrations.verifyStripeCheckout(request.sessionId(), requesterId(principal), requesterRole(principal));
     }
 
     @PostMapping("/stripe/webhook")
     public Map<String, Boolean> stripeWebhook(
-            @RequestBody byte[] rawBody,
-            @RequestHeader("Stripe-Signature") String signature
+        @RequestBody byte[] rawBody,
+        @RequestHeader("Stripe-Signature") String signature
     ) {
         integrations.handleStripeWebhook(rawBody, signature);
         return Map.of("received", true);
@@ -82,16 +84,16 @@ public class PaymentIntegrationController {
 
     @PostMapping("/bakong/qr")
     public Map<String, Object> bakongQr(
-            @Valid @RequestBody InvoiceIdRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @Valid @RequestBody InvoiceIdRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return integrations.generateBakongQr(request.invoiceId(), requesterId(principal), requesterRole(principal));
     }
 
     @PostMapping("/bakong/verify")
     public Map<String, Object> bakongVerify(
-            @Valid @RequestBody BakongPaymentRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @Valid @RequestBody BakongPaymentRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return integrations.verifyBakong(request.md5(), requesterId(principal), requesterRole(principal));
     }
@@ -102,7 +104,7 @@ public class PaymentIntegrationController {
     }
 
     @PostMapping("/bakong/webhook")
-    public Map<String, Object> bakongWebhook(@RequestBody com.fasterxml.jackson.databind.JsonNode payload) {
+    public Map<String, Object> bakongWebhook(@RequestBody tools.jackson.databind.JsonNode payload) {
         return integrations.handleBakongWebhook(payload);
     }
 
@@ -124,5 +126,7 @@ public class PaymentIntegrationController {
         }
     }
 
-    public record InvoiceIdRequest(@jakarta.validation.constraints.NotNull @jakarta.validation.constraints.Positive Integer invoiceId) { }
+    public record InvoiceIdRequest(
+        @jakarta.validation.constraints.NotNull @jakarta.validation.constraints.Positive Integer invoiceId) {
+    }
 }

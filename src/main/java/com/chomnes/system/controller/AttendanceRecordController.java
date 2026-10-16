@@ -40,40 +40,40 @@ public class AttendanceRecordController {
 
     @GetMapping({"/{attendanceId}", "/data/{attendanceId}"})
     public AttendanceRecordResponse findById(
-            @PathVariable Integer attendanceId,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable Integer attendanceId,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return attendanceService.findById(attendanceId, requesterId(principal), requesterRole(principal));
     }
 
     @PostMapping({"", "/create"})
     public ResponseEntity<AttendanceRecordResponse> create(
-            @Valid @RequestBody CreateAttendanceRecordRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @Valid @RequestBody CreateAttendanceRecordRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         AttendanceRecordResponse created = attendanceService.create(
-                request,
-                requesterId(principal),
-                requesterRole(principal)
+            request,
+            requesterId(principal),
+            requesterRole(principal)
         );
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{attendanceId}")
-                .buildAndExpand(created.attendanceId())
-                .toUri();
+            .path("/{attendanceId}")
+            .buildAndExpand(created.attendanceId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping({"/{attendanceId}", "/update/{attendanceId}"})
     public AttendanceRecordResponse update(
-            @PathVariable Integer attendanceId,
-            @Valid @RequestBody UpdateAttendanceRecordRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable Integer attendanceId,
+        @Valid @RequestBody UpdateAttendanceRecordRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return attendanceService.update(
-                attendanceId,
-                request,
-                requesterId(principal),
-                requesterRole(principal)
+            attendanceId,
+            request,
+            requesterId(principal),
+            requesterRole(principal)
         );
     }
 

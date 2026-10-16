@@ -41,16 +41,16 @@ public class BakongQrRequestController {
 
     @PostMapping
     public ResponseEntity<BakongQrRequestResponse> create(
-            @Valid @RequestBody CreateBakongQrRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @Valid @RequestBody CreateBakongQrRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         BakongQrRequestResponse created = requestService.create(
-                request, requesterId(principal), requesterRole(principal)
+            request, requesterId(principal), requesterRole(principal)
         );
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{qrId}")
-                .buildAndExpand(created.qrId())
-                .toUri();
+            .path("/{qrId}")
+            .buildAndExpand(created.qrId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 

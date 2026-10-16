@@ -46,21 +46,21 @@ public class InvoiceController {
 
     @PostMapping({"", "/create"})
     public ResponseEntity<InvoiceResponse> create(
-            @Valid @RequestBody CreateInvoiceRequest request,
-            HttpServletRequest servletRequest
+        @Valid @RequestBody CreateInvoiceRequest request,
+        HttpServletRequest servletRequest
     ) {
         InvoiceResponse created = invoiceService.create(request, servletRequest.getRequestURI().startsWith("/invoice/"));
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{invoiceId}")
-                .buildAndExpand(created.invoiceId())
-                .toUri();
+            .path("/{invoiceId}")
+            .buildAndExpand(created.invoiceId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping({"/{invoiceId}", "/update/{invoiceId}"})
     public InvoiceResponse update(
-            @PathVariable Integer invoiceId,
-            @Valid @RequestBody UpdateInvoiceRequest request
+        @PathVariable Integer invoiceId,
+        @Valid @RequestBody UpdateInvoiceRequest request
     ) {
         return invoiceService.update(invoiceId, request);
     }

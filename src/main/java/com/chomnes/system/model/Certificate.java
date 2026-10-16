@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+
 import java.time.LocalDate;
 
 @Entity
@@ -44,12 +45,12 @@ public class Certificate {
     }
 
     public Certificate(
-            Integer studentId,
-            String certificateType,
-            String templateUsed,
-            LocalDate issueDate,
-            String generatedFileUrl,
-            Integer issuedBy
+        Integer studentId,
+        String certificateType,
+        String templateUsed,
+        LocalDate issueDate,
+        String generatedFileUrl,
+        Integer issuedBy
     ) {
         this.studentId = studentId;
         this.certificateType = certificateType;

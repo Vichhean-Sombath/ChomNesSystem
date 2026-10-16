@@ -39,13 +39,13 @@ public class PaymentService {
     private final String configuredSystemUserId;
 
     public PaymentService(
-            PaymentRepository paymentRepository,
-            InvoiceRepository invoiceRepository,
-            StudentRepository studentRepository,
-            UserRepository userRepository,
-            PasswordEncoder passwordEncoder,
-            PaymentNotificationService paymentNotifications,
-            @Value("${app.payments.system-user-id:}") String configuredSystemUserId
+        PaymentRepository paymentRepository,
+        InvoiceRepository invoiceRepository,
+        StudentRepository studentRepository,
+        UserRepository userRepository,
+        PasswordEncoder passwordEncoder,
+        PaymentNotificationService paymentNotifications,
+        @Value("${app.payments.system-user-id:}") String configuredSystemUserId
     ) {
         this.paymentRepository = paymentRepository;
         this.invoiceRepository = invoiceRepository;
@@ -60,21 +60,21 @@ public class PaymentService {
     public List<PaymentResponse> findAll(Integer requesterId, User.Role requesterRole) {
         if (requesterRole == User.Role.Admin) {
             return paymentRepository.findAllByOrderByPaymentDateDescPaymentIdDesc().stream()
-                    .map(PaymentResponse::from)
-                    .toList();
+                .map(PaymentResponse::from)
+                .toList();
         }
         if (requesterRole == User.Role.Student) {
             Student student = getStudentForUser(requesterId);
             List<Integer> invoiceIds = invoiceRepository
-                    .findAllByStudentIdOrderByCreatedAtDescInvoiceIdDesc(student.getStudentId()).stream()
-                    .map(Invoice::getInvoiceId)
-                    .toList();
+                .findAllByStudentIdOrderByCreatedAtDescInvoiceIdDesc(student.getStudentId()).stream()
+                .map(Invoice::getInvoiceId)
+                .toList();
             if (invoiceIds.isEmpty()) {
                 return List.of();
             }
             return paymentRepository.findAllByInvoiceIdInOrderByPaymentDateDescPaymentIdDesc(invoiceIds).stream()
-                    .map(PaymentResponse::from)
-                    .toList();
+                .map(PaymentResponse::from)
+                .toList();
         }
         throw new AccessDeniedException("You cannot access payments.");
     }
@@ -82,15 +82,15 @@ public class PaymentService {
     @Transactional(readOnly = true)
     public PaymentResponse findById(Integer paymentId, Integer requesterId, User.Role requesterRole) {
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new PaymentNotFoundException(paymentId));
+            .orElseThrow(() -> new PaymentNotFoundException(paymentId));
         authorizeInvoiceOwner(payment.getInvoiceId(), requesterId, requesterRole);
         return PaymentResponse.from(payment);
     }
 
     public PaymentResponse recordPayment(
-            CreatePaymentRequest request,
-            Integer requesterId,
-            User.Role requesterRole
+        CreatePaymentRequest request,
+        Integer requesterId,
+        User.Role requesterRole
     ) {
         if (requesterRole != User.Role.Admin) {
             throw new AccessDeniedException("Only an administrator can record a payment.");
@@ -102,12 +102,12 @@ public class PaymentService {
         Integer recordedBy = request.recordedBy() == null ? requesterId : request.recordedBy();
         if (!userRepository.existsById(recordedBy)) throw new UserNotFoundException(recordedBy);
         if (request.transactionReference() != null
-                && paymentRepository.existsByTransactionReference(request.transactionReference())) {
+            && paymentRepository.existsByTransactionReference(request.transactionReference())) {
             throw new PaymentConflictException("This transaction reference has already been recorded.");
         }
 
         Invoice invoice = invoiceRepository.findByIdForUpdate(request.invoiceId())
-                .orElseThrow(() -> new InvoiceNotFoundException(request.invoiceId()));
+            .orElseThrow(() -> new InvoiceNotFoundException(request.invoiceId()));
         BigDecimal remainingBalance = invoice.getTotalAmount().subtract(invoice.getAmountPaid());
         if (remainingBalance.signum() <= 0) {
             throw new PaymentConflictException("This invoice is already fully paid.");
@@ -117,14 +117,14 @@ public class PaymentService {
         }
 
         Payment payment = new Payment(
-                invoice.getInvoiceId(),
-                request.paymentDate(),
-                request.amount(),
-                paymentMethod,
-                request.receiptUrl(),
-                request.transactionReference(),
-                recordedBy,
-                request.notes()
+            invoice.getInvoiceId(),
+            request.paymentDate(),
+            request.amount(),
+            paymentMethod,
+            request.receiptUrl(),
+            request.transactionReference(),
+            recordedBy,
+            request.notes()
         );
         BigDecimal newAmountPaid = invoice.getAmountPaid().add(request.amount());
         invoice.setAmountPaid(newAmountPaid);
@@ -139,13 +139,15 @@ public class PaymentService {
         return PaymentResponse.from(saved);
     }
 
-    /** Records a provider-confirmed charge exactly once and recalculates its invoice under a row lock. */
+    /**
+     * Records a provider-confirmed charge exactly once and recalculates its invoice under a row lock.
+     */
     public PaymentResponse recordGatewayPayment(
-            Integer invoiceId,
-            BigDecimal amount,
-            String paymentMethod,
-            String transactionReference,
-            String receiptUrl
+        Integer invoiceId,
+        BigDecimal amount,
+        String paymentMethod,
+        String transactionReference,
+        String receiptUrl
     ) {
         if (transactionReference == null || transactionReference.isBlank()) {
             throw new IllegalArgumentException("A provider transaction reference is required.");
@@ -155,7 +157,7 @@ public class PaymentService {
         if (prior != null) return existingProviderPayment(prior, invoiceId, amount, normalizedMethod);
 
         Invoice invoice = invoiceRepository.findByIdForUpdate(invoiceId)
-                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
+            .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
         // A different invoice may have been updated while this provider request waited for its lock.
         prior = paymentRepository.findByTransactionReference(transactionReference).orElse(null);
         if (prior != null) return existingProviderPayment(prior, invoiceId, amount, normalizedMethod);
@@ -173,8 +175,8 @@ public class PaymentService {
         invoiceRepository.save(invoice);
 
         Payment payment = new Payment(invoiceId, LocalDate.now(), amount, normalizedMethod,
-                receiptUrl, transactionReference, systemUserId,
-                "Auto-recorded via " + normalizedMethod + " gateway");
+            receiptUrl, transactionReference, systemUserId,
+            "Auto-recorded via " + normalizedMethod + " gateway");
         Payment saved = paymentRepository.save(payment);
         schedulePaymentNotification(saved.getPaymentId());
         return PaymentResponse.from(saved);
@@ -194,13 +196,13 @@ public class PaymentService {
     }
 
     private PaymentResponse existingProviderPayment(
-            Payment prior,
-            Integer invoiceId,
-            BigDecimal amount,
-            String method
+        Payment prior,
+        Integer invoiceId,
+        BigDecimal amount,
+        String method
     ) {
         if (!invoiceId.equals(prior.getInvoiceId()) || !method.equals(prior.getPaymentMethod())
-                || amount == null || prior.getAmount().compareTo(amount) != 0) {
+            || amount == null || prior.getAmount().compareTo(amount) != 0) {
             throw new PaymentConflictException("Provider transaction reference is already linked to another payment.");
         }
         return PaymentResponse.from(prior);
@@ -219,7 +221,7 @@ public class PaymentService {
         User automationUser = userRepository.findByUsername("system_automation").orElseGet(() -> {
             String randomSecret = java.util.UUID.randomUUID() + java.util.UUID.randomUUID().toString();
             User created = new User("system_automation", "system@chomnes.local",
-                    passwordEncoder.encode(randomSecret), User.Role.Admin);
+                passwordEncoder.encode(randomSecret), User.Role.Admin);
             created.setStatus(User.Status.Active);
             return userRepository.save(created);
         });
@@ -231,7 +233,7 @@ public class PaymentService {
             throw new IllegalArgumentException("Provide at least one payment field to update.");
         }
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new PaymentNotFoundException(paymentId));
+            .orElseThrow(() -> new PaymentNotFoundException(paymentId));
         Integer oldInvoiceId = payment.getInvoiceId();
         Integer invoiceId = request.invoiceId() == null ? oldInvoiceId : request.invoiceId();
         if (!invoiceRepository.existsById(invoiceId)) throw new InvoiceNotFoundException(invoiceId);
@@ -239,7 +241,7 @@ public class PaymentService {
             throw new UserNotFoundException(request.recordedBy());
         }
         if (request.transactionReference() != null && !request.transactionReference().equals(payment.getTransactionReference())
-                && paymentRepository.existsByTransactionReferenceAndPaymentIdNot(request.transactionReference(), paymentId)) {
+            && paymentRepository.existsByTransactionReferenceAndPaymentIdNot(request.transactionReference(), paymentId)) {
             throw new PaymentConflictException("This transaction reference has already been recorded.");
         }
         if (request.paymentDate() != null) payment.setPaymentDate(request.paymentDate());
@@ -258,7 +260,7 @@ public class PaymentService {
 
     public void delete(Integer paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new PaymentNotFoundException(paymentId));
+            .orElseThrow(() -> new PaymentNotFoundException(paymentId));
         Integer invoiceId = payment.getInvoiceId();
         paymentRepository.delete(payment);
         recalculateInvoice(invoiceId);
@@ -266,14 +268,14 @@ public class PaymentService {
 
     private void recalculateInvoice(Integer invoiceId) {
         Invoice invoice = invoiceRepository.findByIdForUpdate(invoiceId)
-                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
+            .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
         BigDecimal totalPaid = paymentRepository.findAllByInvoiceIdOrderByPaymentDateDescPaymentIdDesc(invoiceId)
-                .stream()
-                .map(Payment::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            .stream()
+            .map(Payment::getAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
         invoice.setAmountPaid(totalPaid);
         invoice.setStatus(totalPaid.compareTo(invoice.getTotalAmount()) >= 0
-                ? "Paid" : totalPaid.signum() > 0 ? "Partial" : "Unpaid");
+            ? "Paid" : totalPaid.signum() > 0 ? "Partial" : "Unpaid");
         invoiceRepository.save(invoice);
     }
 
@@ -292,7 +294,7 @@ public class PaymentService {
         }
         Student student = getStudentForUser(requesterId);
         Invoice invoice = invoiceRepository.findById(invoiceId)
-                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
+            .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
         if (!student.getStudentId().equals(invoice.getStudentId())) {
             throw new AccessDeniedException("Students can only access payments for their own invoices.");
         }
@@ -300,6 +302,6 @@ public class PaymentService {
 
     private Student getStudentForUser(Integer userId) {
         return studentRepository.findByUserId(userId)
-                .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
+            .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
     }
 }

@@ -47,14 +47,14 @@ public class AuthService {
     private final String bootstrapKey;
 
     public AuthService(
-            UserRepository userRepository,
-            StudentRepository studentRepository,
-            TeacherRepository teacherRepository,
-            PasswordEncoder passwordEncoder,
-            JwtEncoder jwtEncoder,
-            UserService userService,
-            @Value("${app.jwt.expiration-ms:900000}") long expirationMillis,
-            @Value("${app.auth.bootstrap-key:}") String bootstrapKey
+        UserRepository userRepository,
+        StudentRepository studentRepository,
+        TeacherRepository teacherRepository,
+        PasswordEncoder passwordEncoder,
+        JwtEncoder jwtEncoder,
+        UserService userService,
+        @Value("${app.jwt.expiration-ms:900000}") long expirationMillis,
+        @Value("${app.auth.bootstrap-key:}") String bootstrapKey
     ) {
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
@@ -74,8 +74,8 @@ public class AuthService {
 
     public synchronized UserResponse bootstrapAdmin(BootstrapAdminRequest request) {
         if (bootstrapKey.isBlank() || !MessageDigest.isEqual(
-                bootstrapKey.getBytes(StandardCharsets.UTF_8),
-                request.setupKey().getBytes(StandardCharsets.UTF_8)
+            bootstrapKey.getBytes(StandardCharsets.UTF_8),
+            request.setupKey().getBytes(StandardCharsets.UTF_8)
         )) {
             throw new AccessDeniedException("Administrator setup is not authorized.");
         }
@@ -83,48 +83,48 @@ public class AuthService {
             throw new AdminBootstrapCompleteException();
         }
         return userService.create(new CreateUserRequest(
-                request.username(),
-                request.email(),
-                request.password(),
-                User.Role.Admin
+            request.username(),
+            request.email(),
+            request.password(),
+            User.Role.Admin
         ));
     }
 
     public LoginResponse login(LoginRequest request) {
         String email = request.email().trim().toLowerCase(Locale.ROOT);
         User user = userRepository.findByEmailIgnoreCase(email)
-                .filter(account -> account.getStatus() == User.Status.Active)
-                .filter(account -> passwordEncoder.matches(request.password(), account.getPasswordHash()))
-                .orElseThrow(InvalidCredentialsException::new);
+            .filter(account -> account.getStatus() == User.Status.Active)
+            .filter(account -> passwordEncoder.matches(request.password(), account.getPasswordHash()))
+            .orElseThrow(InvalidCredentialsException::new);
 
         Instant issuedAt = Instant.now();
         Instant expiresAt = issuedAt.plusMillis(expirationMillis);
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer(TOKEN_ISSUER)
-                .issuedAt(issuedAt)
-                .expiresAt(expiresAt)
-                .subject(user.getUserId().toString())
-                .claim("email", user.getEmail())
-                .claim("username", user.getUsername())
-                .claim("roles", List.of(user.getRole().name()))
-                .claim("student_id", studentRepository.findByUserId(user.getUserId())
-                        .map(student -> student.getStudentId()).orElse(null))
-                .claim("teacher_id", teacherRepository.findByUserId(user.getUserId())
-                        .map(teacher -> teacher.getTeacherId()).orElse(null))
-                .build();
+            .issuer(TOKEN_ISSUER)
+            .issuedAt(issuedAt)
+            .expiresAt(expiresAt)
+            .subject(user.getUserId().toString())
+            .claim("email", user.getEmail())
+            .claim("username", user.getUsername())
+            .claim("roles", List.of(user.getRole().name()))
+            .claim("student_id", studentRepository.findByUserId(user.getUserId())
+                .map(student -> student.getStudentId()).orElse(null))
+            .claim("teacher_id", teacherRepository.findByUserId(user.getUserId())
+                .map(teacher -> teacher.getTeacherId()).orElse(null))
+            .build();
 
         String token = jwtEncoder.encode(JwtEncoderParameters.from(
-                JwsHeader.with(MacAlgorithm.HS256).build(), claims
+            JwsHeader.with(MacAlgorithm.HS256).build(), claims
         )).getTokenValue();
 
         user.setLastLoginAt(LocalDateTime.ofInstant(issuedAt, ZoneOffset.UTC));
         userRepository.save(user);
 
         return new LoginResponse(
-                token,
-                "Bearer",
-                expirationMillis / 1000,
-                UserResponse.from(user)
+            token,
+            "Bearer",
+            expirationMillis / 1000,
+            UserResponse.from(user)
         );
     }
 
@@ -134,8 +134,8 @@ public class AuthService {
         Integer studentId = studentRepository.findByUserId(userId).map(student -> student.getStudentId()).orElse(null);
         Integer teacherId = teacherRepository.findByUserId(userId).map(teacher -> teacher.getTeacherId()).orElse(null);
         return new ScholarisAuthResponse("Login successful!", response.accessToken(), new ScholarisAuthResponse.ScholarisUser(
-                userId, response.user().username(), response.user().email(), response.user().role(), response.user().status(),
-                teacherId, studentId
+            userId, response.user().username(), response.user().email(), response.user().role(), response.user().status(),
+            teacherId, studentId
         ));
     }
 
@@ -150,8 +150,8 @@ public class AuthService {
 
     public void changePassword(Integer userId, ChangePasswordRequest request) {
         User user = userRepository.findById(userId)
-                .filter(account -> account.getStatus() == User.Status.Active)
-                .orElseThrow(InvalidCredentialsException::new);
+            .filter(account -> account.getStatus() == User.Status.Active)
+            .orElseThrow(InvalidCredentialsException::new);
         if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
             throw new InvalidCredentialsException();
         }

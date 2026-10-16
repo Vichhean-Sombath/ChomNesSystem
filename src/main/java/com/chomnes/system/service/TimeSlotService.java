@@ -28,13 +28,13 @@ public class TimeSlotService {
     @Transactional(readOnly = true)
     public List<TimeSlotResponse> findAll() {
         return timeSlotRepository.findAll(Sort.by(Sort.Direction.ASC, "dayOfWeek", "startTime"))
-                .stream()
-                .map(TimeSlotResponse::from)
-                .sorted((left, right) -> {
-                    int dayOrder = Integer.compare(DAYS.indexOf(left.dayOfWeek()), DAYS.indexOf(right.dayOfWeek()));
-                    return dayOrder != 0 ? dayOrder : left.startTime().compareTo(right.startTime());
-                })
-                .toList();
+            .stream()
+            .map(TimeSlotResponse::from)
+            .sorted((left, right) -> {
+                int dayOrder = Integer.compare(DAYS.indexOf(left.dayOfWeek()), DAYS.indexOf(right.dayOfWeek()));
+                return dayOrder != 0 ? dayOrder : left.startTime().compareTo(right.startTime());
+            })
+            .toList();
     }
 
     @Transactional(readOnly = true)
@@ -73,7 +73,7 @@ public class TimeSlotService {
 
     private TimeSlot getTimeSlot(Integer timeSlotId) {
         return timeSlotRepository.findById(timeSlotId)
-                .orElseThrow(() -> new TimeSlotNotFoundException(timeSlotId));
+            .orElseThrow(() -> new TimeSlotNotFoundException(timeSlotId));
     }
 
     private void validateTimeRange(LocalTime startTime, LocalTime endTime) {
@@ -91,7 +91,7 @@ public class TimeSlotService {
                 continue;
             }
             boolean overlaps = startTime.isBefore(existing.getEndTime())
-                    && endTime.isAfter(existing.getStartTime());
+                && endTime.isAfter(existing.getStartTime());
             if (overlaps) {
                 throw new TimeSlotConflictException("This time slot overlaps another slot on " + dayOfWeek + ".");
             }

@@ -6,7 +6,6 @@ import com.chomnes.system.dto.FinalGradeResponse;
 import com.chomnes.system.dto.UpdateFinalGradeRequest;
 import com.chomnes.system.exception.FinalGradeConflictException;
 import com.chomnes.system.exception.FinalGradeNotFoundException;
-import com.chomnes.system.exception.ScheduleNotFoundException;
 import com.chomnes.system.exception.SchoolClassNotFoundException;
 import com.chomnes.system.exception.StudentNotFoundException;
 import com.chomnes.system.exception.SubjectNotFoundException;
@@ -58,17 +57,17 @@ public class FinalGradeService {
     private final SemesterRepository semesterRepository;
 
     public FinalGradeService(
-            FinalGradeRepository finalGradeRepository,
-            StudentRepository studentRepository,
-            SchoolClassRepository schoolClassRepository,
-            ScheduleRepository scheduleRepository,
-            AssessmentRepository assessmentRepository,
-            GradeRepository gradeRepository,
-            GradingCriterionRepository criterionRepository,
-            ClassEnrollmentRepository enrollmentRepository,
-            TeacherRepository teacherRepository,
-            SubjectRepository subjectRepository,
-            SemesterRepository semesterRepository
+        FinalGradeRepository finalGradeRepository,
+        StudentRepository studentRepository,
+        SchoolClassRepository schoolClassRepository,
+        ScheduleRepository scheduleRepository,
+        AssessmentRepository assessmentRepository,
+        GradeRepository gradeRepository,
+        GradingCriterionRepository criterionRepository,
+        ClassEnrollmentRepository enrollmentRepository,
+        TeacherRepository teacherRepository,
+        SubjectRepository subjectRepository,
+        SemesterRepository semesterRepository
     ) {
         this.finalGradeRepository = finalGradeRepository;
         this.studentRepository = studentRepository;
@@ -87,33 +86,33 @@ public class FinalGradeService {
     public List<FinalGradeResponse> findAll(Integer requesterId, User.Role requesterRole) {
         if (requesterRole == User.Role.Admin) {
             return finalGradeRepository.findAllByOrderByComputedAtDescFinalGradeIdDesc().stream()
-                    .map(FinalGradeResponse::from)
-                    .toList();
+                .map(FinalGradeResponse::from)
+                .toList();
         }
         if (requesterRole == User.Role.Student) {
             Student student = getStudentForUser(requesterId);
             return finalGradeRepository.findAllByStudentIdOrderByComputedAtDescFinalGradeIdDesc(student.getStudentId())
-                    .stream()
-                    .map(FinalGradeResponse::from)
-                    .toList();
+                .stream()
+                .map(FinalGradeResponse::from)
+                .toList();
         }
         if (requesterRole == User.Role.Teacher) {
             Teacher teacher = getActiveTeacherForUser(requesterId);
             List<Schedule> schedules = scheduleRepository.findAllByTeacherId(teacher.getTeacherId());
             List<Integer> classIds = schedules.stream()
-                    .map(Schedule::getClassId)
-                    .distinct()
-                    .toList();
+                .map(Schedule::getClassId)
+                .distinct()
+                .toList();
             if (classIds.isEmpty()) {
                 return List.of();
             }
             return finalGradeRepository.findAllByClassIdInOrderByComputedAtDescFinalGradeIdDesc(classIds).stream()
-                    .filter(finalGrade -> schedules.stream().anyMatch(schedule ->
-                            schedule.getClassId().equals(finalGrade.getClassId())
-                                    && schedule.getSubjectId().equals(finalGrade.getSubjectId())
-                    ))
-                    .map(FinalGradeResponse::from)
-                    .toList();
+                .filter(finalGrade -> schedules.stream().anyMatch(schedule ->
+                    schedule.getClassId().equals(finalGrade.getClassId())
+                        && schedule.getSubjectId().equals(finalGrade.getSubjectId())
+                ))
+                .map(FinalGradeResponse::from)
+                .toList();
         }
         throw new AccessDeniedException("You cannot access final grades.");
     }
@@ -126,16 +125,16 @@ public class FinalGradeService {
     }
 
     public FinalGradeResponse compute(
-            ComputeFinalGradeRequest request,
-            Integer requesterId,
-            User.Role requesterRole
+        ComputeFinalGradeRequest request,
+        Integer requesterId,
+        User.Role requesterRole
     ) {
         Student student = studentRepository.findById(request.studentId())
-                .orElseThrow(() -> new StudentNotFoundException(request.studentId()));
+            .orElseThrow(() -> new StudentNotFoundException(request.studentId()));
         SchoolClass schoolClass = schoolClassRepository.findById(request.classId())
-                .orElseThrow(() -> new SchoolClassNotFoundException(request.classId()));
+            .orElseThrow(() -> new SchoolClassNotFoundException(request.classId()));
         List<Schedule> schedules = scheduleRepository.findAllByClassIdAndSubjectId(
-                schoolClass.getClassId(), request.subjectId()
+            schoolClass.getClassId(), request.subjectId()
         );
         authorizeManage(schedules, requesterId, requesterRole);
 
@@ -148,14 +147,14 @@ public class FinalGradeService {
 
         List<Integer> scheduleIds = schedules.stream().map(Schedule::getScheduleId).toList();
         List<Assessment> assessments = assessmentRepository
-                .findAllByScheduleIdInOrderByAssessmentDateAscAssessmentIdAsc(scheduleIds);
+            .findAllByScheduleIdInOrderByAssessmentDateAscAssessmentIdAsc(scheduleIds);
         if (assessments.isEmpty()) {
             throw new FinalGradeConflictException("No assessments are configured for this class and subject.");
         }
 
         List<Integer> assessmentIds = assessments.stream().map(Assessment::getAssessmentId).toList();
         List<Grade> publishedGrades = gradeRepository.findAllByAssessmentIdInAndStudentIdAndIsPublishedTrue(
-                assessmentIds, student.getStudentId()
+            assessmentIds, student.getStudentId()
         );
         if (publishedGrades.size() != assessments.size()) {
             throw new FinalGradeConflictException("Every assessment must have a published grade before computing a final grade.");
@@ -167,7 +166,7 @@ public class FinalGradeService {
         }
         Map<Integer, GradingCriterion> criteriaById = new HashMap<>();
         for (GradingCriterion criterion : criterionRepository.findAllById(
-                assessments.stream().map(Assessment::getCriteriaId).distinct().toList()
+            assessments.stream().map(Assessment::getCriteriaId).distinct().toList()
         )) {
             criteriaById.put(criterion.getCriteriaId(), criterion);
         }
@@ -202,22 +201,22 @@ public class FinalGradeService {
             GradingCriterion criterion = criteriaById.get(entry.getKey());
             BigDecimal maxTotal = maxTotalsByCriterion.get(entry.getKey());
             BigDecimal componentPercent = entry.getValue()
-                    .multiply(new BigDecimal("100"))
-                    .divide(maxTotal, 8, RoundingMode.HALF_UP);
+                .multiply(new BigDecimal("100"))
+                .divide(maxTotal, 8, RoundingMode.HALF_UP);
             BigDecimal weightedComponent = componentPercent
-                    .multiply(criterion.getWeightPercentage())
-                    .divide(new BigDecimal("100"), 8, RoundingMode.HALF_UP);
+                .multiply(criterion.getWeightPercentage())
+                .divide(new BigDecimal("100"), 8, RoundingMode.HALF_UP);
             finalScore = finalScore.add(weightedComponent);
         }
         finalScore = finalScore.setScale(2, RoundingMode.HALF_UP);
 
         FinalGrade finalGrade = finalGradeRepository.findByStudentIdAndSubjectIdAndSemesterId(
-                student.getStudentId(), request.subjectId(), schoolClass.getSemesterId()
+            student.getStudentId(), request.subjectId(), schoolClass.getSemesterId()
         ).orElse(null);
         if (finalGrade == null) {
             finalGrade = new FinalGrade(
-                    student.getStudentId(), request.subjectId(), schoolClass.getClassId(),
-                    schoolClass.getSemesterId(), finalScore
+                student.getStudentId(), request.subjectId(), schoolClass.getClassId(),
+                schoolClass.getSemesterId(), finalScore
             );
         }
         finalGrade.setClassId(schoolClass.getClassId());
@@ -232,11 +231,11 @@ public class FinalGradeService {
         }
         validateReferences(request.studentId(), request.subjectId(), request.classId(), request.semesterId());
         if (finalGradeRepository.findByStudentIdAndSubjectIdAndSemesterId(
-                request.studentId(), request.subjectId(), request.semesterId()).isPresent()) {
+            request.studentId(), request.subjectId(), request.semesterId()).isPresent()) {
             throw new FinalGradeConflictException("A final grade already exists for this student, subject, and semester.");
         }
         FinalGrade grade = new FinalGrade(
-                request.studentId(), request.subjectId(), request.classId(), request.semesterId(), request.finalScore()
+            request.studentId(), request.subjectId(), request.classId(), request.semesterId(), request.finalScore()
         );
         grade.setLetterGrade(request.letterGrade());
         grade.setGpaPoints(request.gpaPoints());
@@ -252,7 +251,7 @@ public class FinalGradeService {
         Integer semesterId = request.semesterId() == null ? grade.getSemesterId() : request.semesterId();
         validateReferences(studentId, subjectId, classId, semesterId);
         if (finalGradeRepository.existsByStudentIdAndSubjectIdAndSemesterIdAndFinalGradeIdNot(
-                studentId, subjectId, semesterId, finalGradeId)) {
+            studentId, subjectId, semesterId, finalGradeId)) {
             throw new FinalGradeConflictException("A final grade already exists for this student, subject, and semester.");
         }
         grade.setStudentId(studentId);
@@ -279,7 +278,7 @@ public class FinalGradeService {
 
     private FinalGrade getFinalGrade(Integer finalGradeId) {
         return finalGradeRepository.findById(finalGradeId)
-                .orElseThrow(() -> new FinalGradeNotFoundException(finalGradeId));
+            .orElseThrow(() -> new FinalGradeNotFoundException(finalGradeId));
     }
 
     private void authorizeRead(FinalGrade finalGrade, Integer requesterId, User.Role requesterRole) {
@@ -296,8 +295,8 @@ public class FinalGradeService {
         if (requesterRole == User.Role.Teacher) {
             Teacher teacher = getActiveTeacherForUser(requesterId);
             boolean teachesSubject = scheduleRepository.findAllByTeacherId(teacher.getTeacherId()).stream()
-                    .anyMatch(schedule -> schedule.getClassId().equals(finalGrade.getClassId())
-                            && schedule.getSubjectId().equals(finalGrade.getSubjectId()));
+                .anyMatch(schedule -> schedule.getClassId().equals(finalGrade.getClassId())
+                    && schedule.getSubjectId().equals(finalGrade.getSubjectId()));
             if (!teachesSubject) {
                 throw new AccessDeniedException("Teachers can only access final grades for their own subjects.");
             }
@@ -321,12 +320,12 @@ public class FinalGradeService {
 
     private Student getStudentForUser(Integer userId) {
         return studentRepository.findByUserId(userId)
-                .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
+            .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
     }
 
     private Teacher getActiveTeacherForUser(Integer userId) {
         Teacher teacher = teacherRepository.findByUserId(userId)
-                .orElseThrow(() -> new AccessDeniedException("No teacher profile is associated with this account."));
+            .orElseThrow(() -> new AccessDeniedException("No teacher profile is associated with this account."));
         if (!"Active".equals(teacher.getStatus())) {
             throw new AccessDeniedException("This teacher profile is inactive.");
         }

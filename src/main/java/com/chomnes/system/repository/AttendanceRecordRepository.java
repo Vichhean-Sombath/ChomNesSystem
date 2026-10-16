@@ -8,16 +8,16 @@ import java.util.List;
 
 public interface AttendanceRecordRepository extends JpaRepository<AttendanceRecord, Integer> {
     boolean existsByScheduleIdAndStudentIdAndAttendanceDate(
-            Integer scheduleId,
-            Integer studentId,
-            LocalDate attendanceDate
+        Integer scheduleId,
+        Integer studentId,
+        LocalDate attendanceDate
     );
 
     boolean existsByScheduleIdAndStudentIdAndAttendanceDateAndAttendanceIdNot(
-            Integer scheduleId,
-            Integer studentId,
-            LocalDate attendanceDate,
-            Integer attendanceId
+        Integer scheduleId,
+        Integer studentId,
+        LocalDate attendanceDate,
+        Integer attendanceId
     );
 
     List<AttendanceRecord> findAllByOrderByAttendanceDateDescAttendanceIdDesc();

@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
 
@@ -57,11 +58,11 @@ public class BakongQrRequest {
     }
 
     public BakongQrRequest(
-            Integer invoiceId,
-            String md5,
-            BigDecimal amountKhr,
-            BigDecimal amountUsd,
-            LocalDateTime expiresAt
+        Integer invoiceId,
+        String md5,
+        BigDecimal amountKhr,
+        BigDecimal amountUsd,
+        LocalDateTime expiresAt
     ) {
         this.invoiceId = invoiceId;
         this.md5 = md5;

@@ -16,7 +16,6 @@ import com.chomnes.system.model.AcademicYear;
 import com.chomnes.system.model.Schedule;
 import com.chomnes.system.model.SchoolClass;
 import com.chomnes.system.model.Semester;
-import com.chomnes.system.model.Subject;
 import com.chomnes.system.model.Teacher;
 import com.chomnes.system.model.TimeSlot;
 import com.chomnes.system.repository.AcademicYearRepository;
@@ -44,13 +43,13 @@ public class ScheduleService {
     private final SemesterRepository semesterRepository;
 
     public ScheduleService(
-            ScheduleRepository scheduleRepository,
-            SchoolClassRepository schoolClassRepository,
-            SubjectRepository subjectRepository,
-            TeacherRepository teacherRepository,
-            TimeSlotRepository timeSlotRepository,
-            AcademicYearRepository academicYearRepository,
-            SemesterRepository semesterRepository
+        ScheduleRepository scheduleRepository,
+        SchoolClassRepository schoolClassRepository,
+        SubjectRepository subjectRepository,
+        TeacherRepository teacherRepository,
+        TimeSlotRepository timeSlotRepository,
+        AcademicYearRepository academicYearRepository,
+        SemesterRepository semesterRepository
     ) {
         this.scheduleRepository = scheduleRepository;
         this.schoolClassRepository = schoolClassRepository;
@@ -64,9 +63,9 @@ public class ScheduleService {
     @Transactional(readOnly = true)
     public List<ScheduleResponse> findAll() {
         return scheduleRepository.findAll(Sort.by(Sort.Direction.ASC, "classId", "timeSlotId", "scheduleId"))
-                .stream()
-                .map(ScheduleResponse::from)
-                .toList();
+            .stream()
+            .map(ScheduleResponse::from)
+            .toList();
     }
 
     @Transactional(readOnly = true)
@@ -80,11 +79,11 @@ public class ScheduleService {
         validateAvailability(request.classId(), request.teacherId(), request.timeSlotId(), roomNumber, null);
 
         Schedule schedule = new Schedule(
-                request.classId(),
-                request.subjectId(),
-                request.teacherId(),
-                request.timeSlotId(),
-                roomNumber
+            request.classId(),
+            request.subjectId(),
+            request.teacherId(),
+            request.timeSlotId(),
+            roomNumber
         );
         return ScheduleResponse.from(scheduleRepository.save(schedule));
     }
@@ -103,10 +102,10 @@ public class ScheduleService {
         Integer teacherId = request.teacherId() == null ? schedule.getTeacherId() : request.teacherId();
         Integer timeSlotId = request.timeSlotId() == null ? schedule.getTimeSlotId() : request.timeSlotId();
         String roomNumber = Boolean.TRUE.equals(request.clearRoomNumber())
-                ? null
-                : request.roomNumber() == null
-                        ? schedule.getRoomNumber()
-                        : normalizeOptional(request.roomNumber());
+            ? null
+            : request.roomNumber() == null
+            ? schedule.getRoomNumber()
+            : normalizeOptional(request.roomNumber());
 
         validateReferences(classId, subjectId, teacherId, timeSlotId);
         validateAvailability(classId, teacherId, timeSlotId, roomNumber, scheduleId);
@@ -126,20 +125,20 @@ public class ScheduleService {
 
     private Schedule getSchedule(Integer scheduleId) {
         return scheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));
+            .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));
     }
 
     private void validateReferences(Integer classId, Integer subjectId, Integer teacherId, Integer timeSlotId) {
         SchoolClass schoolClass = schoolClassRepository.findById(classId)
-                .orElseThrow(() -> new SchoolClassNotFoundException(classId));
+            .orElseThrow(() -> new SchoolClassNotFoundException(classId));
         AcademicYear academicYear = academicYearRepository.findById(schoolClass.getAcademicYearId())
-                .orElseThrow(() -> new AcademicYearNotFoundException(schoolClass.getAcademicYearId()));
+            .orElseThrow(() -> new AcademicYearNotFoundException(schoolClass.getAcademicYearId()));
         if (!"Active".equals(academicYear.getStatus())) {
             throw new AcademicYearConflictException("Schedules can only be assigned to an active academic year.");
         }
 
         Semester semester = semesterRepository.findById(schoolClass.getSemesterId())
-                .orElseThrow(() -> new SemesterNotFoundException(schoolClass.getSemesterId()));
+            .orElseThrow(() -> new SemesterNotFoundException(schoolClass.getSemesterId()));
         if (!semester.getAcademicYearId().equals(academicYear.getAcademicYearId())) {
             throw new ScheduleConflictException("The class semester does not belong to its academic year.");
         }
@@ -149,49 +148,49 @@ public class ScheduleService {
         }
 
         Teacher teacher = teacherRepository.findById(teacherId)
-                .orElseThrow(() -> new TeacherNotFoundException(teacherId));
+            .orElseThrow(() -> new TeacherNotFoundException(teacherId));
         if (!"Active".equals(teacher.getStatus())) {
             throw new ScheduleConflictException("An inactive teacher cannot be assigned to a schedule.");
         }
 
         TimeSlot timeSlot = timeSlotRepository.findById(timeSlotId)
-                .orElseThrow(() -> new TimeSlotNotFoundException(timeSlotId));
+            .orElseThrow(() -> new TimeSlotNotFoundException(timeSlotId));
         if (!timeSlot.getEndTime().isAfter(timeSlot.getStartTime())) {
             throw new ScheduleConflictException("The selected time slot has an invalid time range.");
         }
     }
 
     private void validateAvailability(
-            Integer classId,
-            Integer teacherId,
-            Integer timeSlotId,
-            String roomNumber,
-            Integer excludedScheduleId
+        Integer classId,
+        Integer teacherId,
+        Integer timeSlotId,
+        String roomNumber,
+        Integer excludedScheduleId
     ) {
         boolean teacherConflict = excludedScheduleId == null
-                ? scheduleRepository.existsByTeacherIdAndTimeSlotId(teacherId, timeSlotId)
-                : scheduleRepository.existsByTeacherIdAndTimeSlotIdAndScheduleIdNot(
-                        teacherId, timeSlotId, excludedScheduleId
-                );
+            ? scheduleRepository.existsByTeacherIdAndTimeSlotId(teacherId, timeSlotId)
+            : scheduleRepository.existsByTeacherIdAndTimeSlotIdAndScheduleIdNot(
+            teacherId, timeSlotId, excludedScheduleId
+        );
         if (teacherConflict) {
             throw new ScheduleConflictException("The teacher already has a schedule in this time slot.");
         }
 
         boolean classConflict = excludedScheduleId == null
-                ? scheduleRepository.existsByClassIdAndTimeSlotId(classId, timeSlotId)
-                : scheduleRepository.existsByClassIdAndTimeSlotIdAndScheduleIdNot(
-                        classId, timeSlotId, excludedScheduleId
-                );
+            ? scheduleRepository.existsByClassIdAndTimeSlotId(classId, timeSlotId)
+            : scheduleRepository.existsByClassIdAndTimeSlotIdAndScheduleIdNot(
+            classId, timeSlotId, excludedScheduleId
+        );
         if (classConflict) {
             throw new ScheduleConflictException("The class already has a schedule in this time slot.");
         }
 
         if (roomNumber != null) {
             boolean roomConflict = excludedScheduleId == null
-                    ? scheduleRepository.existsByRoomNumberAndTimeSlotId(roomNumber, timeSlotId)
-                    : scheduleRepository.existsByRoomNumberAndTimeSlotIdAndScheduleIdNot(
-                            roomNumber, timeSlotId, excludedScheduleId
-                    );
+                ? scheduleRepository.existsByRoomNumberAndTimeSlotId(roomNumber, timeSlotId)
+                : scheduleRepository.existsByRoomNumberAndTimeSlotIdAndScheduleIdNot(
+                roomNumber, timeSlotId, excludedScheduleId
+            );
             if (roomConflict) {
                 throw new ScheduleConflictException("The room is already booked in this time slot.");
             }

@@ -24,8 +24,8 @@ public class SemesterService {
     private final AcademicYearRepository academicYearRepository;
 
     public SemesterService(
-            SemesterRepository semesterRepository,
-            AcademicYearRepository academicYearRepository
+        SemesterRepository semesterRepository,
+        AcademicYearRepository academicYearRepository
     ) {
         this.semesterRepository = semesterRepository;
         this.academicYearRepository = academicYearRepository;
@@ -34,13 +34,13 @@ public class SemesterService {
     @Transactional(readOnly = true)
     public List<SemesterResponse> findAll() {
         return semesterRepository.findAll(Sort.by(
-                        Sort.Order.asc("academicYearId"),
-                        Sort.Order.asc("startDate"),
-                        Sort.Order.asc("semesterId")
-                ))
-                .stream()
-                .map(SemesterResponse::from)
-                .toList();
+                Sort.Order.asc("academicYearId"),
+                Sort.Order.asc("startDate"),
+                Sort.Order.asc("semesterId")
+            ))
+            .stream()
+            .map(SemesterResponse::from)
+            .toList();
     }
 
     @Transactional(readOnly = true)
@@ -55,10 +55,10 @@ public class SemesterService {
         requireWithinAcademicYear(academicYear, request.startDate(), request.endDate());
 
         Semester semester = new Semester(
-                academicYear.getAcademicYearId(),
-                semesterName,
-                request.startDate(),
-                request.endDate()
+            academicYear.getAcademicYearId(),
+            semesterName,
+            request.startDate(),
+            request.endDate()
         );
         return SemesterResponse.from(semesterRepository.save(semester));
     }
@@ -69,14 +69,14 @@ public class SemesterService {
         }
         Semester semester = getSemester(semesterId);
         Integer academicYearId = request.academicYearId() == null
-                ? semester.getAcademicYearId()
-                : request.academicYearId();
+            ? semester.getAcademicYearId()
+            : request.academicYearId();
         AcademicYear academicYear = getAcademicYear(academicYearId);
         requireActiveAcademicYear(academicYear);
 
         String semesterName = request.semesterName() == null
-                ? semester.getSemesterName()
-                : requireNonBlank(request.semesterName(), "Semester name");
+            ? semester.getSemesterName()
+            : requireNonBlank(request.semesterName(), "Semester name");
         LocalDate startDate = request.startDate() == null ? semester.getStartDate() : request.startDate();
         LocalDate endDate = request.endDate() == null ? semester.getEndDate() : request.endDate();
         requireWithinAcademicYear(academicYear, startDate, endDate);
@@ -95,12 +95,12 @@ public class SemesterService {
 
     private Semester getSemester(Integer semesterId) {
         return semesterRepository.findById(semesterId)
-                .orElseThrow(() -> new SemesterNotFoundException(semesterId));
+            .orElseThrow(() -> new SemesterNotFoundException(semesterId));
     }
 
     private AcademicYear getAcademicYear(Integer academicYearId) {
         return academicYearRepository.findById(academicYearId)
-                .orElseThrow(() -> new AcademicYearNotFoundException(academicYearId));
+            .orElseThrow(() -> new AcademicYearNotFoundException(academicYearId));
     }
 
     private String requireNonBlank(String value, String field) {

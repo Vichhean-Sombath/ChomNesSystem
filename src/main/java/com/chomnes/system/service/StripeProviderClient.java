@@ -1,7 +1,8 @@
 package com.chomnes.system.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -34,11 +35,11 @@ public class StripeProviderClient {
     private final String serverUrl;
 
     public StripeProviderClient(
-            ObjectMapper objectMapper,
-            @Value("${app.payments.stripe.secret-key:}") String secretKey,
-            @Value("${app.payments.stripe.public-key:}") String publicKey,
-            @Value("${app.payments.stripe.webhook-secret:}") String webhookSecret,
-            @Value("${app.payments.server-url:}") String serverUrl
+        ObjectMapper objectMapper,
+        @Value("${app.payments.stripe.secret-key:}") String secretKey,
+        @Value("${app.payments.stripe.public-key:}") String publicKey,
+        @Value("${app.payments.stripe.webhook-secret:}") String webhookSecret,
+        @Value("${app.payments.server-url:}") String serverUrl
     ) {
         this.objectMapper = objectMapper;
         this.secretKey = sanitize(secretKey);
@@ -54,36 +55,36 @@ public class StripeProviderClient {
     }
 
     public StripeSession createCheckoutSession(
-            Integer invoiceId,
-            Integer studentId,
-            String invoiceNumber,
-            String feeName,
-            long amountCents,
-            String successUrl,
-            String cancelUrl
+        Integer invoiceId,
+        Integer studentId,
+        String invoiceNumber,
+        String feeName,
+        long amountCents,
+        String successUrl,
+        String cancelUrl
     ) {
         requireSecretKey();
         String baseUrl = normalizedServerUrl();
         validateRedirect(successUrl);
         validateRedirect(cancelUrl);
         String success = successUrl == null || successUrl.isBlank()
-                ? baseUrl + "/payment/stripe/success?session_id={CHECKOUT_SESSION_ID}" : successUrl;
+            ? baseUrl + "/payment/stripe/success?session_id={CHECKOUT_SESSION_ID}" : successUrl;
         String cancel = cancelUrl == null || cancelUrl.isBlank()
-                ? baseUrl + "/payment/stripe/cancel" : cancelUrl;
+            ? baseUrl + "/payment/stripe/cancel" : cancelUrl;
 
         Map<String, String> form = Map.ofEntries(
-                Map.entry("mode", "payment"),
-                Map.entry("payment_method_types[0]", "card"),
-                Map.entry("line_items[0][price_data][currency]", "usd"),
-                Map.entry("line_items[0][price_data][unit_amount]", Long.toString(amountCents)),
-                Map.entry("line_items[0][price_data][product_data][name]", blankFallback(feeName, "School fee")),
-                Map.entry("line_items[0][price_data][product_data][description]", "Invoice " + invoiceNumber),
-                Map.entry("line_items[0][quantity]", "1"),
-                Map.entry("metadata[invoice_id]", invoiceId.toString()),
-                Map.entry("metadata[student_id]", studentId.toString()),
-                Map.entry("metadata[invoice_number]", invoiceNumber),
-                Map.entry("success_url", success),
-                Map.entry("cancel_url", cancel)
+            Map.entry("mode", "payment"),
+            Map.entry("payment_method_types[0]", "card"),
+            Map.entry("line_items[0][price_data][currency]", "usd"),
+            Map.entry("line_items[0][price_data][unit_amount]", Long.toString(amountCents)),
+            Map.entry("line_items[0][price_data][product_data][name]", blankFallback(feeName, "School fee")),
+            Map.entry("line_items[0][price_data][product_data][description]", "Invoice " + invoiceNumber),
+            Map.entry("line_items[0][quantity]", "1"),
+            Map.entry("metadata[invoice_id]", invoiceId.toString()),
+            Map.entry("metadata[student_id]", studentId.toString()),
+            Map.entry("metadata[invoice_number]", invoiceNumber),
+            Map.entry("success_url", success),
+            Map.entry("cancel_url", cancel)
         );
         return parseSession(send("POST", "/checkout/sessions", form));
     }
@@ -109,7 +110,8 @@ public class StripeProviderClient {
             if ("t".equals(pair[0])) timestamp = pair[1];
             else if ("v1".equals(pair[0])) signatures.add(pair[1]);
         }
-        if (timestamp == null || signatures.isEmpty()) throw new IllegalArgumentException("Stripe webhook signature is invalid.");
+        if (timestamp == null || signatures.isEmpty())
+            throw new IllegalArgumentException("Stripe webhook signature is invalid.");
         long epoch;
         try {
             epoch = Long.parseLong(timestamp);
@@ -134,7 +136,7 @@ public class StripeProviderClient {
         if (!valid) throw new IllegalArgumentException("Stripe webhook signature verification failed.");
         try {
             return objectMapper.readTree(payload);
-        } catch (IOException exception) {
+        } catch (JacksonException exception) {
             throw new IllegalArgumentException("Stripe webhook body is not valid JSON.");
         }
     }
@@ -142,15 +144,15 @@ public class StripeProviderClient {
     private JsonNode send(String method, String path, Map<String, String> form) {
         String credentials = Base64.getEncoder().encodeToString((secretKey + ":").getBytes(StandardCharsets.UTF_8));
         HttpRequest.Builder request = HttpRequest.newBuilder(URI.create(API_URL + path))
-                .timeout(Duration.ofSeconds(20))
-                .header("Authorization", "Basic " + credentials)
-                .header("Accept", "application/json");
+            .timeout(Duration.ofSeconds(20))
+            .header("Authorization", "Basic " + credentials)
+            .header("Accept", "application/json");
         if ("POST".equals(method)) {
             String body = form.entrySet().stream()
-                    .map(entry -> encode(entry.getKey()) + "=" + encode(entry.getValue()))
-                    .collect(java.util.stream.Collectors.joining("&"));
+                .map(entry -> encode(entry.getKey()) + "=" + encode(entry.getValue()))
+                .collect(java.util.stream.Collectors.joining("&"));
             request.header("Content-Type", "application/x-www-form-urlencoded")
-                    .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8));
+                .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8));
         } else {
             request.GET();
         }
@@ -158,7 +160,7 @@ public class StripeProviderClient {
             HttpResponse<byte[]> response = httpClient.send(request.build(), HttpResponse.BodyHandlers.ofByteArray());
             JsonNode json = objectMapper.readTree(response.body());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                String message = json.path("error").path("message").asText("Stripe request failed.");
+                String message = json.path("error").path("message").asString("Stripe request failed.");
                 throw new IllegalStateException(message);
             }
             return json;
@@ -172,11 +174,11 @@ public class StripeProviderClient {
 
     private StripeSession parseSession(JsonNode json) {
         JsonNode metadata = json.path("metadata");
-        return new StripeSession(json.path("id").asText(null), json.path("url").asText(null),
-                json.path("payment_status").asText("unpaid"),
-                json.path("amount_total").isNumber() ? json.path("amount_total").longValue() : null,
-                json.path("currency").asText(null), metadata.path("invoice_id").asText(null),
-                metadata.path("student_id").asText(null));
+        return new StripeSession(json.path("id").asString(null), json.path("url").asString(null),
+            json.path("payment_status").asString("unpaid"),
+            json.path("amount_total").isNumber() ? json.path("amount_total").longValue() : null,
+            json.path("currency").asString(null), metadata.path("invoice_id").asString(null),
+            metadata.path("student_id").asString(null));
     }
 
     private void requireSecretKey() {
@@ -197,7 +199,7 @@ public class StripeProviderClient {
         try {
             URI uri = URI.create(value.replace("{CHECKOUT_SESSION_ID}", "checkout-session-id"));
             if (!("https".equalsIgnoreCase(uri.getScheme()) || "http".equalsIgnoreCase(uri.getScheme()))
-                    || uri.getHost() == null || uri.getUserInfo() != null) {
+                || uri.getHost() == null || uri.getUserInfo() != null) {
                 throw new IllegalArgumentException("Stripe redirect URLs must be absolute HTTP(S) URLs.");
             }
         } catch (IllegalArgumentException exception) {
@@ -235,12 +237,13 @@ public class StripeProviderClient {
     }
 
     public record StripeSession(
-            String id,
-            String url,
-            String paymentStatus,
-            Long amountTotal,
-            String currency,
-            String invoiceId,
-            String studentId
-    ) { }
+        String id,
+        String url,
+        String paymentStatus,
+        Long amountTotal,
+        String currency,
+        String invoiceId,
+        String studentId
+    ) {
+    }
 }

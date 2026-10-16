@@ -40,13 +40,13 @@ public class FeeStructureService {
     private final ScheduleRepository scheduleRepository;
 
     public FeeStructureService(
-            FeeStructureRepository feeStructureRepository,
-            SchoolClassRepository schoolClassRepository,
-            SemesterRepository semesterRepository,
-            StudentRepository studentRepository,
-            TeacherRepository teacherRepository,
-            ClassEnrollmentRepository enrollmentRepository,
-            ScheduleRepository scheduleRepository
+        FeeStructureRepository feeStructureRepository,
+        SchoolClassRepository schoolClassRepository,
+        SemesterRepository semesterRepository,
+        StudentRepository studentRepository,
+        TeacherRepository teacherRepository,
+        ClassEnrollmentRepository enrollmentRepository,
+        ScheduleRepository scheduleRepository
     ) {
         this.feeStructureRepository = feeStructureRepository;
         this.schoolClassRepository = schoolClassRepository;
@@ -65,9 +65,9 @@ public class FeeStructureService {
         }
         Scope scope = getScope(requesterId, requesterRole);
         return fees.stream()
-                .filter(fee -> isVisible(fee, scope))
-                .map(FeeStructureResponse::from)
-                .toList();
+            .filter(fee -> isVisible(fee, scope))
+            .map(FeeStructureResponse::from)
+            .toList();
     }
 
     @Transactional(readOnly = true)
@@ -81,21 +81,21 @@ public class FeeStructureService {
 
     public FeeStructureResponse create(CreateFeeStructureRequest request) {
         Semester semester = semesterRepository.findById(request.semesterId())
-                .orElseThrow(() -> new SemesterNotFoundException(request.semesterId()));
+            .orElseThrow(() -> new SemesterNotFoundException(request.semesterId()));
         Integer classId = request.classId();
         if (classId != null) {
             SchoolClass schoolClass = schoolClassRepository.findById(classId)
-                    .orElseThrow(() -> new SchoolClassNotFoundException(classId));
+                .orElseThrow(() -> new SchoolClassNotFoundException(classId));
             if (!schoolClass.getSemesterId().equals(semester.getSemesterId())) {
                 throw new FeeStructureConflictException("The fee semester must match the selected class semester.");
             }
         }
         FeeStructure feeStructure = new FeeStructure(
-                classId,
-                semester.getSemesterId(),
-                requireNonBlank(request.feeName()),
-                request.amount(),
-                request.dueDate()
+            classId,
+            semester.getSemesterId(),
+            requireNonBlank(request.feeName()),
+            request.amount(),
+            request.dueDate()
         );
         return FeeStructureResponse.from(feeStructureRepository.save(feeStructure));
     }
@@ -129,38 +129,38 @@ public class FeeStructureService {
 
     private FeeStructure getFeeStructure(Integer feeId) {
         return feeStructureRepository.findById(feeId)
-                .orElseThrow(() -> new FeeStructureNotFoundException(feeId));
+            .orElseThrow(() -> new FeeStructureNotFoundException(feeId));
     }
 
     private Scope getScope(Integer requesterId, User.Role requesterRole) {
         if (requesterRole == User.Role.Student) {
             Student student = studentRepository.findByUserId(requesterId)
-                    .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
+                .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
             List<Integer> classIds = enrollmentRepository
-                    .findAllByStudentIdOrderByEnrollmentDateDescEnrollmentIdAsc(student.getStudentId()).stream()
-                    .map(ClassEnrollment::getClassId)
-                    .distinct()
-                    .toList();
+                .findAllByStudentIdOrderByEnrollmentDateDescEnrollmentIdAsc(student.getStudentId()).stream()
+                .map(ClassEnrollment::getClassId)
+                .distinct()
+                .toList();
             List<Integer> semesterIds = schoolClassRepository.findAllById(classIds).stream()
-                    .map(SchoolClass::getSemesterId)
-                    .distinct()
-                    .toList();
+                .map(SchoolClass::getSemesterId)
+                .distinct()
+                .toList();
             return new Scope(classIds, semesterIds);
         }
         if (requesterRole == User.Role.Teacher) {
             Teacher teacher = teacherRepository.findByUserId(requesterId)
-                    .orElseThrow(() -> new AccessDeniedException("No teacher profile is associated with this account."));
+                .orElseThrow(() -> new AccessDeniedException("No teacher profile is associated with this account."));
             if (!"Active".equals(teacher.getStatus())) {
                 throw new AccessDeniedException("This teacher profile is inactive.");
             }
             List<Integer> classIds = scheduleRepository.findAllByTeacherId(teacher.getTeacherId()).stream()
-                    .map(Schedule::getClassId)
-                    .distinct()
-                    .toList();
+                .map(Schedule::getClassId)
+                .distinct()
+                .toList();
             List<Integer> semesterIds = schoolClassRepository.findAllById(classIds).stream()
-                    .map(SchoolClass::getSemesterId)
-                    .distinct()
-                    .toList();
+                .map(SchoolClass::getSemesterId)
+                .distinct()
+                .toList();
             return new Scope(classIds, semesterIds);
         }
         throw new AccessDeniedException("You cannot access fee structures.");
@@ -168,7 +168,7 @@ public class FeeStructureService {
 
     private boolean isVisible(FeeStructure feeStructure, Scope scope) {
         return scope.semesterIds().contains(feeStructure.getSemesterId())
-                && (feeStructure.getClassId() == null || scope.classIds().contains(feeStructure.getClassId()));
+            && (feeStructure.getClassId() == null || scope.classIds().contains(feeStructure.getClassId()));
     }
 
     private String requireNonBlank(String value) {

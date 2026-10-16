@@ -19,9 +19,9 @@ public class ReportsController {
 
     @GetMapping("/summary")
     public Map<String, Object> summary(
-            @RequestParam(required = false) String range,
-            @RequestParam(required = false) Integer academicYearId,
-            @RequestParam(required = false) Integer semesterId
+        @RequestParam(required = false) String range,
+        @RequestParam(required = false) Integer academicYearId,
+        @RequestParam(required = false) Integer semesterId
     ) {
         return reportsService.summary(range, academicYearId, semesterId);
     }

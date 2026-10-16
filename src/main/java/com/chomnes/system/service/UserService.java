@@ -31,10 +31,10 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     public UserService(
-            UserRepository userRepository,
-            StudentRepository studentRepository,
-            TeacherRepository teacherRepository,
-            PasswordEncoder passwordEncoder
+        UserRepository userRepository,
+        StudentRepository studentRepository,
+        TeacherRepository teacherRepository,
+        PasswordEncoder passwordEncoder
     ) {
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
@@ -45,9 +45,9 @@ public class UserService {
     @Transactional(readOnly = true)
     public List<UserResponse> findAll() {
         return userRepository.findAll(Sort.by(Sort.Direction.ASC, "userId"))
-                .stream()
-                .map(UserResponse::from)
-                .toList();
+            .stream()
+            .map(UserResponse::from)
+            .toList();
     }
 
     @Transactional(readOnly = true)
@@ -67,29 +67,29 @@ public class UserService {
         ensureUnique(username, email, null);
 
         if (createRoleProfile && (request.role() == User.Role.Student || request.role() == User.Role.Teacher)
-                && (request.firstName() == null || request.firstName().isBlank()
-                || request.lastName() == null || request.lastName().isBlank())) {
+            && (request.firstName() == null || request.firstName().isBlank()
+            || request.lastName() == null || request.lastName().isBlank())) {
             throw new IllegalArgumentException("First name and last name are required for student and teacher accounts.");
         }
 
         User user = new User(
-                username,
-                email,
-                hashPassword(request.password()),
-                request.role()
+            username,
+            email,
+            hashPassword(request.password()),
+            request.role()
         );
         User savedUser = userRepository.save(user);
         if (createRoleProfile && request.role() == User.Role.Student) {
             studentRepository.save(new Student(
-                    savedUser.getUserId(), request.firstName().trim(), request.lastName().trim(), request.dob(),
-                    request.gender(), request.photoUrl(), request.contactNumber(), request.address(),
-                    request.enrollmentDate() == null ? LocalDate.now() : request.enrollmentDate()
+                savedUser.getUserId(), request.firstName().trim(), request.lastName().trim(), request.dob(),
+                request.gender(), request.photoUrl(), request.contactNumber(), request.address(),
+                request.enrollmentDate() == null ? LocalDate.now() : request.enrollmentDate()
             ));
         } else if (createRoleProfile && request.role() == User.Role.Teacher) {
             teacherRepository.save(new Teacher(
-                    savedUser.getUserId(), request.firstName().trim(), request.lastName().trim(), request.dob(),
-                    request.gender(), request.photoUrl(), request.contactNumber(), request.specialization(),
-                    request.bio(), LocalDate.now()
+                savedUser.getUserId(), request.firstName().trim(), request.lastName().trim(), request.dob(),
+                request.gender(), request.photoUrl(), request.contactNumber(), request.specialization(),
+                request.bio(), LocalDate.now()
             ));
         }
         return UserResponse.from(savedUser);
@@ -124,7 +124,7 @@ public class UserService {
         ensureUnique(username, email, userId);
 
         if (request.status() == User.Status.Inactive
-                && (user.getRole() == User.Role.Admin || request.role() == User.Role.Admin)) {
+            && (user.getRole() == User.Role.Admin || request.role() == User.Role.Admin)) {
             throw new AccessDeniedException("An administrator account cannot be deactivated.");
         }
 
@@ -169,18 +169,18 @@ public class UserService {
 
     private User getUser(Integer userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+            .orElseThrow(() -> new UserNotFoundException(userId));
     }
 
     private void ensureUnique(String username, String email, Integer userId) {
         if (username != null && (userId == null
-                ? userRepository.existsByUsername(username)
-                : userRepository.existsByUsernameAndUserIdNot(username, userId))) {
+            ? userRepository.existsByUsername(username)
+            : userRepository.existsByUsernameAndUserIdNot(username, userId))) {
             throw new DuplicateUserException("username");
         }
         if (email != null && (userId == null
-                ? userRepository.existsByEmail(email)
-                : userRepository.existsByEmailAndUserIdNot(email, userId))) {
+            ? userRepository.existsByEmail(email)
+            : userRepository.existsByEmailAndUserIdNot(email, userId))) {
             throw new DuplicateUserException("email");
         }
     }

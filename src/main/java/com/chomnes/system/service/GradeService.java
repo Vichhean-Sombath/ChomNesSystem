@@ -38,12 +38,12 @@ public class GradeService {
     private final ClassEnrollmentRepository enrollmentRepository;
 
     public GradeService(
-            GradeRepository gradeRepository,
-            AssessmentRepository assessmentRepository,
-            ScheduleRepository scheduleRepository,
-            StudentRepository studentRepository,
-            TeacherRepository teacherRepository,
-            ClassEnrollmentRepository enrollmentRepository
+        GradeRepository gradeRepository,
+        AssessmentRepository assessmentRepository,
+        ScheduleRepository scheduleRepository,
+        StudentRepository studentRepository,
+        TeacherRepository teacherRepository,
+        ClassEnrollmentRepository enrollmentRepository
     ) {
         this.gradeRepository = gradeRepository;
         this.assessmentRepository = assessmentRepository;
@@ -62,33 +62,33 @@ public class GradeService {
     public List<GradeResponse> findAll(Integer requesterId, User.Role requesterRole, Integer assessmentId) {
         if (requesterRole == User.Role.Admin) {
             return gradeRepository.findAllByOrderByEnteredAtDescGradeIdDesc().stream()
-                    .filter(grade -> assessmentId == null || assessmentId.equals(grade.getAssessmentId()))
-                    .map(GradeResponse::from)
-                    .toList();
+                .filter(grade -> assessmentId == null || assessmentId.equals(grade.getAssessmentId()))
+                .map(GradeResponse::from)
+                .toList();
         }
         if (requesterRole == User.Role.Student) {
             Student student = getStudentForUser(requesterId);
             return gradeRepository.findAllByStudentIdAndIsPublishedTrueOrderByEnteredAtDescGradeIdDesc(
-                            student.getStudentId()
-                    ).stream()
-                    .filter(grade -> assessmentId == null || assessmentId.equals(grade.getAssessmentId()))
-                    .map(GradeResponse::from)
-                    .toList();
+                    student.getStudentId()
+                ).stream()
+                .filter(grade -> assessmentId == null || assessmentId.equals(grade.getAssessmentId()))
+                .map(GradeResponse::from)
+                .toList();
         }
         if (requesterRole == User.Role.Teacher) {
             Teacher teacher = getActiveTeacherForUser(requesterId);
             List<Integer> scheduleIds = scheduleRepository.findAllByTeacherId(teacher.getTeacherId()).stream()
-                    .map(Schedule::getScheduleId)
-                    .toList();
+                .map(Schedule::getScheduleId)
+                .toList();
             List<Integer> assessmentIds = scheduleIds.isEmpty()
-                    ? List.of()
-                    : assessmentRepository.findAllByScheduleIdInOrderByAssessmentDateAscAssessmentIdAsc(scheduleIds)
-                            .stream()
-                            .map(Assessment::getAssessmentId)
-                            .toList();
+                ? List.of()
+                : assessmentRepository.findAllByScheduleIdInOrderByAssessmentDateAscAssessmentIdAsc(scheduleIds)
+                .stream()
+                .map(Assessment::getAssessmentId)
+                .toList();
             return gradesForAssessments(assessmentIds).stream()
-                    .filter(grade -> assessmentId == null || assessmentId.equals(grade.assessmentId()))
-                    .toList();
+                .filter(grade -> assessmentId == null || assessmentId.equals(grade.assessmentId()))
+                .toList();
         }
         throw new AccessDeniedException("You cannot access grades.");
     }
@@ -105,7 +105,7 @@ public class GradeService {
         Schedule schedule = getSchedule(assessment.getScheduleId());
         Teacher enteredBy = authorizeManage(schedule, requesterId, requesterRole);
         Student student = studentRepository.findById(request.studentId())
-                .orElseThrow(() -> new StudentNotFoundException(request.studentId()));
+            .orElseThrow(() -> new StudentNotFoundException(request.studentId()));
         if (!enrollmentRepository.existsByStudentIdAndClassId(student.getStudentId(), schedule.getClassId())) {
             throw new GradeConflictException("The student must be enrolled in the assessment's class.");
         }
@@ -115,20 +115,20 @@ public class GradeService {
         }
 
         Grade grade = new Grade(
-                assessment.getAssessmentId(),
-                student.getStudentId(),
-                request.score(),
-                enteredBy.getTeacherId(),
-                Boolean.TRUE.equals(request.isPublished())
+            assessment.getAssessmentId(),
+            student.getStudentId(),
+            request.score(),
+            enteredBy.getTeacherId(),
+            Boolean.TRUE.equals(request.isPublished())
         );
         return GradeResponse.from(gradeRepository.save(grade));
     }
 
     public GradeResponse update(
-            Integer gradeId,
-            UpdateGradeRequest request,
-            Integer requesterId,
-            User.Role requesterRole
+        Integer gradeId,
+        UpdateGradeRequest request,
+        Integer requesterId,
+        User.Role requesterRole
     ) {
         if (request.isEmpty()) {
             throw new IllegalArgumentException("Provide at least one grade field to update.");
@@ -152,8 +152,8 @@ public class GradeService {
             return List.of();
         }
         return gradeRepository.findAllByAssessmentIdInOrderByEnteredAtDescGradeIdDesc(assessmentIds).stream()
-                .map(GradeResponse::from)
-                .toList();
+            .map(GradeResponse::from)
+            .toList();
     }
 
     public void delete(Integer gradeId) {
@@ -167,18 +167,18 @@ public class GradeService {
 
     private Assessment getAssessment(Integer assessmentId) {
         return assessmentRepository.findById(assessmentId)
-                .orElseThrow(() -> new AssessmentNotFoundException(assessmentId));
+            .orElseThrow(() -> new AssessmentNotFoundException(assessmentId));
     }
 
     private Schedule getSchedule(Integer scheduleId) {
         return scheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));
+            .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));
     }
 
     private Teacher authorizeManage(Schedule schedule, Integer requesterId, User.Role requesterRole) {
         if (requesterRole == User.Role.Admin) {
             return teacherRepository.findById(schedule.getTeacherId())
-                    .orElseThrow(() -> new AccessDeniedException("The assessment schedule has no teacher profile."));
+                .orElseThrow(() -> new AccessDeniedException("The assessment schedule has no teacher profile."));
         }
         if (requesterRole != User.Role.Teacher) {
             throw new AccessDeniedException("Only an administrator or the scheduled teacher can manage grades.");
@@ -220,7 +220,7 @@ public class GradeService {
 
     private Teacher getActiveTeacherForUser(Integer userId) {
         Teacher teacher = teacherRepository.findByUserId(userId)
-                .orElseThrow(() -> new AccessDeniedException("No teacher profile is associated with this account."));
+            .orElseThrow(() -> new AccessDeniedException("No teacher profile is associated with this account."));
         if (!"Active".equals(teacher.getStatus())) {
             throw new AccessDeniedException("This teacher profile is inactive.");
         }
@@ -229,6 +229,6 @@ public class GradeService {
 
     private Student getStudentForUser(Integer userId) {
         return studentRepository.findByUserId(userId)
-                .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
+            .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
     }
 }

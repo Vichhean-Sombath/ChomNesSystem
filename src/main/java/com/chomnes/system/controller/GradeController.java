@@ -36,8 +36,8 @@ public class GradeController {
 
     @GetMapping({"", "/data"})
     public List<GradeResponse> findAll(
-            @RequestParam(name = "assessment_id", required = false) Integer assessmentId,
-            @AuthenticationPrincipal Jwt principal
+        @RequestParam(name = "assessment_id", required = false) Integer assessmentId,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return gradeService.findAll(requesterId(principal), requesterRole(principal), assessmentId);
     }
@@ -49,22 +49,22 @@ public class GradeController {
 
     @PostMapping({"", "/create"})
     public ResponseEntity<GradeResponse> create(
-            @Valid @RequestBody CreateGradeRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @Valid @RequestBody CreateGradeRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         GradeResponse created = gradeService.create(request, requesterId(principal), requesterRole(principal));
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{gradeId}")
-                .buildAndExpand(created.gradeId())
-                .toUri();
+            .path("/{gradeId}")
+            .buildAndExpand(created.gradeId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping({"/{gradeId}", "/update/{gradeId}"})
     public GradeResponse update(
-            @PathVariable Integer gradeId,
-            @Valid @RequestBody UpdateGradeRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable Integer gradeId,
+        @Valid @RequestBody UpdateGradeRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return gradeService.update(gradeId, request, requesterId(principal), requesterRole(principal));
     }

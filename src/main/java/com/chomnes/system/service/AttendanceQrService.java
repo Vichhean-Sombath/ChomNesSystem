@@ -31,12 +31,12 @@ public class AttendanceQrService {
     private final long lifetimeSeconds;
 
     public AttendanceQrService(
-            ScheduleRepository schedules,
-            TeacherRepository teachers,
-            UserRepository users,
-            JwtEncoder jwtEncoder,
-            JwtDecoder jwtDecoder,
-            @Value("${app.attendance.qr-ttl-seconds:120}") long lifetimeSeconds
+        ScheduleRepository schedules,
+        TeacherRepository teachers,
+        UserRepository users,
+        JwtEncoder jwtEncoder,
+        JwtDecoder jwtDecoder,
+        @Value("${app.attendance.qr-ttl-seconds:120}") long lifetimeSeconds
     ) {
         this.schedules = schedules;
         this.teachers = teachers;
@@ -48,12 +48,12 @@ public class AttendanceQrService {
 
     public Map<String, Object> issue(Integer scheduleId, Integer requesterId, User.Role requesterRole) {
         User account = users.findById(requesterId)
-                .orElseThrow(() -> new AccessDeniedException("Active account required to issue an attendance QR."));
+            .orElseThrow(() -> new AccessDeniedException("Active account required to issue an attendance QR."));
         if (account.getStatus() != User.Status.Active || account.getRole() != requesterRole) {
             throw new AccessDeniedException("Active account required to issue an attendance QR.");
         }
         Schedule schedule = schedules.findById(scheduleId)
-                .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));
+            .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));
         authorizeSchedule(schedule, requesterId, requesterRole);
         if (lifetimeSeconds < 1 || lifetimeSeconds > 900) {
             throw new IllegalStateException("Attendance QR lifetime must be between 1 and 900 seconds.");
@@ -63,18 +63,18 @@ public class AttendanceQrService {
         Instant expiresAt = issuedAt.plusSeconds(lifetimeSeconds);
         LocalDate attendanceDate = LocalDate.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer(ISSUER)
-                .subject(PURPOSE)
-                .issuedAt(issuedAt)
-                .expiresAt(expiresAt)
-                .id(UUID.randomUUID().toString())
-                .claim("purpose", PURPOSE)
-                .claim("schedule_id", schedule.getScheduleId())
-                .claim("class_id", schedule.getClassId())
-                .claim("attendance_date", attendanceDate.toString())
-                .build();
+            .issuer(ISSUER)
+            .subject(PURPOSE)
+            .issuedAt(issuedAt)
+            .expiresAt(expiresAt)
+            .id(UUID.randomUUID().toString())
+            .claim("purpose", PURPOSE)
+            .claim("schedule_id", schedule.getScheduleId())
+            .claim("class_id", schedule.getClassId())
+            .claim("attendance_date", attendanceDate.toString())
+            .build();
         String token = jwtEncoder.encode(JwtEncoderParameters.from(
-                JwsHeader.with(MacAlgorithm.HS256).build(), claims
+            JwsHeader.with(MacAlgorithm.HS256).build(), claims
         )).getTokenValue();
 
         Map<String, Object> response = new LinkedHashMap<>();
@@ -96,11 +96,11 @@ public class AttendanceQrService {
             throw new AccessDeniedException("Invalid or expired attendance QR token.");
         }
         if (!ISSUER.equals(claims.getIssuer() == null ? null : claims.getIssuer().toString())
-                || !PURPOSE.equals(claims.getClaimAsString("purpose"))
-                || !PURPOSE.equals(claims.getSubject())
-                || !matchesId(claims, "schedule_id", scheduleId)
-                || !matchesId(claims, "class_id", classId)
-                || !attendanceDate.toString().equals(claims.getClaimAsString("attendance_date"))) {
+            || !PURPOSE.equals(claims.getClaimAsString("purpose"))
+            || !PURPOSE.equals(claims.getSubject())
+            || !matchesId(claims, "schedule_id", scheduleId)
+            || !matchesId(claims, "class_id", classId)
+            || !attendanceDate.toString().equals(claims.getClaimAsString("attendance_date"))) {
             throw new AccessDeniedException("Attendance QR token does not match this schedule and date.");
         }
     }
@@ -116,7 +116,7 @@ public class AttendanceQrService {
             throw new AccessDeniedException("Only an administrator or the scheduled teacher can issue an attendance QR.");
         }
         Teacher teacher = teachers.findByUserId(requesterId)
-                .orElseThrow(() -> new AccessDeniedException("No teacher profile is associated with this account."));
+            .orElseThrow(() -> new AccessDeniedException("No teacher profile is associated with this account."));
         if (!"Active".equals(teacher.getStatus()) || !teacher.getTeacherId().equals(schedule.getTeacherId())) {
             throw new AccessDeniedException("Teachers can issue attendance QR tokens only for their own active schedules.");
         }

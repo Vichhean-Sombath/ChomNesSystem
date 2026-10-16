@@ -10,7 +10,6 @@ import jakarta.validation.Valid;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -39,32 +38,32 @@ public class FinalGradeController {
 
     @GetMapping({"/{finalGradeId}", "/data/{finalGradeId}"})
     public FinalGradeResponse findById(
-            @PathVariable Integer finalGradeId,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable Integer finalGradeId,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return finalGradeService.findById(finalGradeId, requesterId(principal), requesterRole(principal));
     }
 
     @PostMapping("/compute")
     public FinalGradeResponse compute(
-            @Valid @RequestBody ComputeFinalGradeRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @Valid @RequestBody ComputeFinalGradeRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return finalGradeService.compute(request, requesterId(principal), requesterRole(principal));
     }
 
     @PostMapping("/create")
     public FinalGradeResponse create(
-            @Valid @RequestBody CreateFinalGradeRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @Valid @RequestBody CreateFinalGradeRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return finalGradeService.create(request, requesterId(principal), requesterRole(principal));
     }
 
     @PutMapping({"/{finalGradeId}", "/update/{finalGradeId}"})
     public FinalGradeResponse update(
-            @PathVariable Integer finalGradeId,
-            @Valid @RequestBody UpdateFinalGradeRequest request
+        @PathVariable Integer finalGradeId,
+        @Valid @RequestBody UpdateFinalGradeRequest request
     ) {
         return finalGradeService.update(finalGradeId, request);
     }

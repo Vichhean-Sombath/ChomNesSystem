@@ -45,24 +45,24 @@ public class PaymentController {
 
     @PostMapping({"", "/create"})
     public ResponseEntity<PaymentResponse> recordPayment(
-            @Valid @RequestBody CreatePaymentRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @Valid @RequestBody CreatePaymentRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         PaymentResponse created = paymentService.recordPayment(
-                request, requesterId(principal), requesterRole(principal)
+            request, requesterId(principal), requesterRole(principal)
         );
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{paymentId}")
-                .buildAndExpand(created.paymentId())
-                .toUri();
+            .path("/{paymentId}")
+            .buildAndExpand(created.paymentId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping({"/{paymentId}", "/update/{paymentId}"})
     public PaymentResponse update(
-            @PathVariable Integer paymentId,
-            @Valid @RequestBody UpdatePaymentRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable Integer paymentId,
+        @Valid @RequestBody UpdatePaymentRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         if (requesterRole(principal) != User.Role.Admin) {
             throw new AccessDeniedException("Only an administrator can update a payment.");
@@ -72,8 +72,8 @@ public class PaymentController {
 
     @DeleteMapping({"/{paymentId}", "/delete/{paymentId}"})
     public Map<String, String> delete(
-            @PathVariable Integer paymentId,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable Integer paymentId,
+        @AuthenticationPrincipal Jwt principal
     ) {
         if (requesterRole(principal) != User.Role.Admin) {
             throw new AccessDeniedException("Only an administrator can delete a payment.");

@@ -30,16 +30,16 @@ public class CertificateService {
     public List<CertificateResponse> findAll(Integer requesterId, User.Role requesterRole) {
         if (requesterRole == User.Role.Admin) {
             return certificateRepository.findAllByOrderByIssueDateDescCertificateIdDesc().stream()
-                    .map(CertificateResponse::from)
-                    .toList();
+                .map(CertificateResponse::from)
+                .toList();
         }
         if (requesterRole == User.Role.Student) {
             Student student = getStudentForUser(requesterId);
             return certificateRepository.findAllByStudentIdOrderByIssueDateDescCertificateIdDesc(
-                            student.getStudentId()
-                    ).stream()
-                    .map(CertificateResponse::from)
-                    .toList();
+                    student.getStudentId()
+                ).stream()
+                .map(CertificateResponse::from)
+                .toList();
         }
         throw new AccessDeniedException("You cannot access certificates.");
     }
@@ -47,7 +47,7 @@ public class CertificateService {
     @Transactional(readOnly = true)
     public CertificateResponse findById(Integer certificateId, Integer requesterId, User.Role requesterRole) {
         Certificate certificate = certificateRepository.findById(certificateId)
-                .orElseThrow(() -> new CertificateNotFoundException(certificateId));
+            .orElseThrow(() -> new CertificateNotFoundException(certificateId));
         if (requesterRole == User.Role.Admin) {
             return CertificateResponse.from(certificate);
         }
@@ -66,21 +66,21 @@ public class CertificateService {
             throw new AccessDeniedException("Only an administrator can issue certificates.");
         }
         Student student = studentRepository.findById(request.studentId())
-                .orElseThrow(() -> new StudentNotFoundException(request.studentId()));
+            .orElseThrow(() -> new StudentNotFoundException(request.studentId()));
         Certificate certificate = new Certificate(
-                student.getStudentId(),
-                request.certificateType(),
-                request.templateUsed(),
-                request.issueDate(),
-                request.generatedFileUrl(),
-                requesterId
+            student.getStudentId(),
+            request.certificateType(),
+            request.templateUsed(),
+            request.issueDate(),
+            request.generatedFileUrl(),
+            requesterId
         );
         return CertificateResponse.from(certificateRepository.save(certificate));
     }
 
     public void delete(Integer certificateId) {
         certificateRepository.findById(certificateId)
-                .orElseThrow(() -> new CertificateNotFoundException(certificateId));
+            .orElseThrow(() -> new CertificateNotFoundException(certificateId));
         certificateRepository.deleteById(certificateId);
     }
 
@@ -97,13 +97,13 @@ public class CertificateService {
 
     public void attachFile(Integer certificateId, String fileUrl) {
         Certificate certificate = certificateRepository.findById(certificateId)
-                .orElseThrow(() -> new CertificateNotFoundException(certificateId));
+            .orElseThrow(() -> new CertificateNotFoundException(certificateId));
         certificate.setGeneratedFileUrl(fileUrl);
         certificateRepository.save(certificate);
     }
 
     private Student getStudentForUser(Integer userId) {
         return studentRepository.findByUserId(userId)
-                .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
+            .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
     }
 }

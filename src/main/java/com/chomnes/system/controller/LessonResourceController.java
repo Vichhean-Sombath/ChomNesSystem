@@ -25,6 +25,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
@@ -45,32 +46,32 @@ public class LessonResourceController {
 
     @GetMapping({"/{resourceId}", "/data/{resourceId}"})
     public LessonResourceResponse findById(
-            @PathVariable Integer resourceId,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable Integer resourceId,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return resourceService.findById(resourceId, requesterId(principal), requesterRole(principal));
     }
 
     @PostMapping({"", "/create"})
     public ResponseEntity<LessonResourceResponse> create(
-            @Valid @RequestBody CreateLessonResourceRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @Valid @RequestBody CreateLessonResourceRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         LessonResourceResponse created = resourceService.create(
-                request, requesterId(principal), requesterRole(principal)
+            request, requesterId(principal), requesterRole(principal)
         );
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{resourceId}")
-                .buildAndExpand(created.resourceId())
-                .toUri();
+            .path("/{resourceId}")
+            .buildAndExpand(created.resourceId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 
     @PostMapping({"/{resourceId}/file", "/upload/{resourceId}"})
     public Map<String, Object> uploadFile(
-            @PathVariable Integer resourceId,
-            @RequestPart("file") MultipartFile file,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable Integer resourceId,
+        @RequestPart("file") MultipartFile file,
+        @AuthenticationPrincipal Jwt principal
     ) {
         FileStorageService.StoredFile stored = files.store(file);
         try {
@@ -84,17 +85,17 @@ public class LessonResourceController {
 
     @PutMapping({"/{resourceId}", "/update/{resourceId}"})
     public LessonResourceResponse update(
-            @PathVariable Integer resourceId,
-            @Valid @RequestBody UpdateLessonResourceRequest request,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable Integer resourceId,
+        @Valid @RequestBody UpdateLessonResourceRequest request,
+        @AuthenticationPrincipal Jwt principal
     ) {
         return resourceService.update(resourceId, request, requesterId(principal), requesterRole(principal));
     }
 
     @DeleteMapping({"/{resourceId}", "/delete/{resourceId}"})
     public ResponseEntity<Void> delete(
-            @PathVariable Integer resourceId,
-            @AuthenticationPrincipal Jwt principal
+        @PathVariable Integer resourceId,
+        @AuthenticationPrincipal Jwt principal
     ) {
         resourceService.delete(resourceId, requesterId(principal), requesterRole(principal));
         return ResponseEntity.noContent().build();

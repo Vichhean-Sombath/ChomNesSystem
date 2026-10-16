@@ -38,11 +38,11 @@ public class ClassEnrollmentService {
     private final SemesterRepository semesterRepository;
 
     public ClassEnrollmentService(
-            ClassEnrollmentRepository enrollmentRepository,
-            StudentRepository studentRepository,
-            SchoolClassRepository schoolClassRepository,
-            AcademicYearRepository academicYearRepository,
-            SemesterRepository semesterRepository
+        ClassEnrollmentRepository enrollmentRepository,
+        StudentRepository studentRepository,
+        SchoolClassRepository schoolClassRepository,
+        AcademicYearRepository academicYearRepository,
+        SemesterRepository semesterRepository
     ) {
         this.enrollmentRepository = enrollmentRepository;
         this.studentRepository = studentRepository;
@@ -62,7 +62,7 @@ public class ClassEnrollmentService {
                 throw new AccessDeniedException("This student profile is inactive.");
             }
             enrollments = enrollmentRepository.findAllByStudentIdOrderByEnrollmentDateDescEnrollmentIdAsc(
-                    student.getStudentId()
+                student.getStudentId()
             );
         } else {
             throw new AccessDeniedException("You cannot access class enrollments.");
@@ -85,7 +85,7 @@ public class ClassEnrollmentService {
 
         SchoolClass schoolClass = getActiveClass(request.classId());
         if (enrollmentRepository.existsByStudentIdAndClassIdAndStatus(
-                student.getStudentId(), schoolClass.getClassId(), "Active")) {
+            student.getStudentId(), schoolClass.getClassId(), "Active")) {
             throw new ClassEnrollmentConflictException("The student is already actively enrolled in this class.");
         }
         requireAvailableCapacity(schoolClass);
@@ -96,10 +96,10 @@ public class ClassEnrollmentService {
     }
 
     public ClassEnrollmentResponse update(
-            Integer enrollmentId,
-            UpdateClassEnrollmentRequest request,
-            Integer requesterId,
-            User.Role requesterRole
+        Integer enrollmentId,
+        UpdateClassEnrollmentRequest request,
+        Integer requesterId,
+        User.Role requesterRole
     ) {
         if (request.isEmpty()) {
             throw new IllegalArgumentException("Provide at least one class enrollment field to update.");
@@ -122,8 +122,8 @@ public class ClassEnrollmentService {
 
         String nextStatus = request.status() == null ? enrollment.getStatus() : request.status();
         LocalDate nextEnrollmentDate = request.enrollmentDate() == null
-                ? enrollment.getEnrollmentDate()
-                : request.enrollmentDate();
+            ? enrollment.getEnrollmentDate()
+            : request.enrollmentDate();
         if ("Active".equals(nextStatus) && !"Active".equals(enrollment.getStatus())) {
             Student student = getStudent(enrollment.getStudentId());
             if (!"Active".equals(student.getStatus())) {
@@ -131,7 +131,7 @@ public class ClassEnrollmentService {
             }
             SchoolClass schoolClass = getActiveClass(enrollment.getClassId());
             if (enrollmentRepository.existsByStudentIdAndClassIdAndStatusAndEnrollmentIdNot(
-                    enrollment.getStudentId(), enrollment.getClassId(), "Active", enrollmentId)) {
+                enrollment.getStudentId(), enrollment.getClassId(), "Active", enrollmentId)) {
                 throw new ClassEnrollmentConflictException("The student is already actively enrolled in this class.");
             }
             requireAvailableCapacity(schoolClass);
@@ -165,29 +165,29 @@ public class ClassEnrollmentService {
 
     private ClassEnrollment getEnrollment(Integer enrollmentId) {
         return enrollmentRepository.findById(enrollmentId)
-                .orElseThrow(() -> new ClassEnrollmentNotFoundException(enrollmentId));
+            .orElseThrow(() -> new ClassEnrollmentNotFoundException(enrollmentId));
     }
 
     private Student getStudent(Integer studentId) {
         return studentRepository.findById(studentId)
-                .orElseThrow(() -> new StudentNotFoundException(studentId));
+            .orElseThrow(() -> new StudentNotFoundException(studentId));
     }
 
     private Student getStudentForUser(Integer userId) {
         return studentRepository.findByUserId(userId)
-                .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
+            .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
     }
 
     private SchoolClass getActiveClass(Integer classId) {
         SchoolClass schoolClass = schoolClassRepository.findById(classId)
-                .orElseThrow(() -> new SchoolClassNotFoundException(classId));
+            .orElseThrow(() -> new SchoolClassNotFoundException(classId));
         AcademicYear academicYear = academicYearRepository.findById(schoolClass.getAcademicYearId())
-                .orElseThrow(() -> new AcademicYearNotFoundException(schoolClass.getAcademicYearId()));
+            .orElseThrow(() -> new AcademicYearNotFoundException(schoolClass.getAcademicYearId()));
         if (!"Active".equals(academicYear.getStatus())) {
             throw new AcademicYearConflictException("Students cannot enroll in a class from a closed academic year.");
         }
         Semester semester = semesterRepository.findById(schoolClass.getSemesterId())
-                .orElseThrow(() -> new SemesterNotFoundException(schoolClass.getSemesterId()));
+            .orElseThrow(() -> new SemesterNotFoundException(schoolClass.getSemesterId()));
         if (!semester.getAcademicYearId().equals(academicYear.getAcademicYearId())) {
             throw new ClassEnrollmentConflictException("The class semester does not belong to its academic year.");
         }

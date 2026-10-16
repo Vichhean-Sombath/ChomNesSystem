@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
 
@@ -56,11 +57,11 @@ public class FinalGrade {
     }
 
     public FinalGrade(
-            Integer studentId,
-            Integer subjectId,
-            Integer classId,
-            Integer semesterId,
-            BigDecimal finalScore
+        Integer studentId,
+        Integer subjectId,
+        Integer classId,
+        Integer semesterId,
+        BigDecimal finalScore
     ) {
         this.studentId = studentId;
         this.subjectId = subjectId;

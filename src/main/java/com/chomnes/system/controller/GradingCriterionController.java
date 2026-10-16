@@ -41,20 +41,20 @@ public class GradingCriterionController {
 
     @PostMapping({"", "/create"})
     public ResponseEntity<GradingCriterionResponse> create(
-            @Valid @RequestBody CreateGradingCriterionRequest request
+        @Valid @RequestBody CreateGradingCriterionRequest request
     ) {
         GradingCriterionResponse created = criterionService.create(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{criteriaId}")
-                .buildAndExpand(created.criteriaId())
-                .toUri();
+            .path("/{criteriaId}")
+            .buildAndExpand(created.criteriaId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping({"/{criteriaId}", "/update/{criteriaId}"})
     public GradingCriterionResponse update(
-            @PathVariable Integer criteriaId,
-            @Valid @RequestBody UpdateGradingCriterionRequest request
+        @PathVariable Integer criteriaId,
+        @Valid @RequestBody UpdateGradingCriterionRequest request
     ) {
         return criterionService.update(criteriaId, request);
     }

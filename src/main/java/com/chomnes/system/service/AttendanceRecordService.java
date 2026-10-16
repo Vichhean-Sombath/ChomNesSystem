@@ -43,13 +43,13 @@ public class AttendanceRecordService {
     private final ClassEnrollmentRepository enrollmentRepository;
 
     public AttendanceRecordService(
-            AttendanceRecordRepository attendanceRepository,
-            StudentRepository studentRepository,
-            TeacherRepository teacherRepository,
-            ScheduleRepository scheduleRepository,
-            SchoolClassRepository schoolClassRepository,
-            SemesterRepository semesterRepository,
-            ClassEnrollmentRepository enrollmentRepository
+        AttendanceRecordRepository attendanceRepository,
+        StudentRepository studentRepository,
+        TeacherRepository teacherRepository,
+        ScheduleRepository scheduleRepository,
+        SchoolClassRepository schoolClassRepository,
+        SemesterRepository semesterRepository,
+        ClassEnrollmentRepository enrollmentRepository
     ) {
         this.attendanceRepository = attendanceRepository;
         this.studentRepository = studentRepository;
@@ -68,19 +68,19 @@ public class AttendanceRecordService {
         } else if (requesterRole == User.Role.Teacher) {
             Teacher teacher = getActiveTeacherForUser(requesterId);
             List<Integer> scheduleIds = scheduleRepository.findAllByTeacherId(teacher.getTeacherId())
-                    .stream()
-                    .map(Schedule::getScheduleId)
-                    .toList();
+                .stream()
+                .map(Schedule::getScheduleId)
+                .toList();
             if (scheduleIds.isEmpty()) {
                 return List.of();
             }
             records = attendanceRepository.findAllByScheduleIdInOrderByAttendanceDateDescAttendanceIdDesc(
-                    scheduleIds
+                scheduleIds
             );
         } else if (requesterRole == User.Role.Student) {
             Student student = getStudentForUser(requesterId);
             records = attendanceRepository.findAllByStudentIdOrderByAttendanceDateDescAttendanceIdDesc(
-                    student.getStudentId()
+                student.getStudentId()
             );
         } else {
             throw new AccessDeniedException("You cannot access attendance records.");
@@ -96,9 +96,9 @@ public class AttendanceRecordService {
     }
 
     public AttendanceRecordResponse create(
-            CreateAttendanceRecordRequest request,
-            Integer requesterId,
-            User.Role requesterRole
+        CreateAttendanceRecordRequest request,
+        Integer requesterId,
+        User.Role requesterRole
     ) {
         Schedule schedule = getSchedule(request.scheduleId());
         Teacher marker = getAuthorizedMarker(schedule, requesterId, requesterRole);
@@ -111,26 +111,26 @@ public class AttendanceRecordService {
         validateStudentEnrollment(student.getStudentId(), schedule.getClassId(), attendanceDate);
         validateAttendanceDate(schedule, attendanceDate);
         if (attendanceRepository.existsByScheduleIdAndStudentIdAndAttendanceDate(
-                schedule.getScheduleId(), student.getStudentId(), attendanceDate
+            schedule.getScheduleId(), student.getStudentId(), attendanceDate
         )) {
             throw new AttendanceRecordConflictException("Attendance has already been recorded for this student and date.");
         }
 
         AttendanceRecord record = new AttendanceRecord(
-                schedule.getScheduleId(),
-                student.getStudentId(),
-                attendanceDate,
-                request.status(),
-                marker.getTeacherId()
+            schedule.getScheduleId(),
+            student.getStudentId(),
+            attendanceDate,
+            request.status(),
+            marker.getTeacherId()
         );
         return AttendanceRecordResponse.from(attendanceRepository.save(record));
     }
 
     public AttendanceRecordResponse update(
-            Integer attendanceId,
-            UpdateAttendanceRecordRequest request,
-            Integer requesterId,
-            User.Role requesterRole
+        Integer attendanceId,
+        UpdateAttendanceRecordRequest request,
+        Integer requesterId,
+        User.Role requesterRole
     ) {
         if (request.isEmpty()) {
             throw new IllegalArgumentException("Provide at least one attendance field to update.");
@@ -139,18 +139,18 @@ public class AttendanceRecordService {
         authorizeWrite(record, requesterId, requesterRole);
 
         LocalDate attendanceDate = request.attendanceDate() == null
-                ? record.getAttendanceDate()
-                : request.attendanceDate();
+            ? record.getAttendanceDate()
+            : request.attendanceDate();
         String status = request.status() == null ? record.getStatus() : request.status();
         Schedule schedule = getSchedule(record.getScheduleId());
         validateStudentEnrollment(record.getStudentId(), schedule.getClassId(), attendanceDate);
         validateAttendanceDate(schedule, attendanceDate);
         if (!attendanceDate.equals(record.getAttendanceDate())
-                && attendanceRepository.existsByScheduleIdAndStudentIdAndAttendanceDateAndAttendanceIdNot(
-                        record.getScheduleId(), record.getStudentId(), attendanceDate, attendanceId
-                )) {
+            && attendanceRepository.existsByScheduleIdAndStudentIdAndAttendanceDateAndAttendanceIdNot(
+            record.getScheduleId(), record.getStudentId(), attendanceDate, attendanceId
+        )) {
             throw new AttendanceRecordConflictException(
-                    "Attendance has already been recorded for this student and date."
+                "Attendance has already been recorded for this student and date."
             );
         }
 
@@ -213,19 +213,19 @@ public class AttendanceRecordService {
 
     private void validateStudentEnrollment(Integer studentId, Integer classId, LocalDate attendanceDate) {
         if (!enrollmentRepository.existsByStudentIdAndClassIdAndStatusAndEnrollmentDateLessThanEqual(
-                studentId, classId, "Active", attendanceDate
+            studentId, classId, "Active", attendanceDate
         )) {
             throw new AttendanceRecordConflictException(
-                    "The student must be actively enrolled in the class on the attendance date."
+                "The student must be actively enrolled in the class on the attendance date."
             );
         }
     }
 
     private void validateAttendanceDate(Schedule schedule, LocalDate attendanceDate) {
         SchoolClass schoolClass = schoolClassRepository.findById(schedule.getClassId())
-                .orElseThrow(() -> new SchoolClassNotFoundException(schedule.getClassId()));
+            .orElseThrow(() -> new SchoolClassNotFoundException(schedule.getClassId()));
         Semester semester = semesterRepository.findById(schoolClass.getSemesterId())
-                .orElseThrow(() -> new SemesterNotFoundException(schoolClass.getSemesterId()));
+            .orElseThrow(() -> new SemesterNotFoundException(schoolClass.getSemesterId()));
         if (attendanceDate.isBefore(semester.getStartDate()) || attendanceDate.isAfter(semester.getEndDate())) {
             throw new AttendanceRecordConflictException("Attendance date must fall within the class semester.");
         }
@@ -238,27 +238,27 @@ public class AttendanceRecordService {
 
     private AttendanceRecord getAttendanceRecord(Integer attendanceId) {
         return attendanceRepository.findById(attendanceId)
-                .orElseThrow(() -> new AttendanceRecordNotFoundException(attendanceId));
+            .orElseThrow(() -> new AttendanceRecordNotFoundException(attendanceId));
     }
 
     private Schedule getSchedule(Integer scheduleId) {
         return scheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));
+            .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));
     }
 
     private Student getStudent(Integer studentId) {
         return studentRepository.findById(studentId)
-                .orElseThrow(() -> new StudentNotFoundException(studentId));
+            .orElseThrow(() -> new StudentNotFoundException(studentId));
     }
 
     private Student getStudentForUser(Integer userId) {
         return studentRepository.findByUserId(userId)
-                .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
+            .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
     }
 
     private Teacher getActiveTeacherForUser(Integer userId) {
         Teacher teacher = teacherRepository.findByUserId(userId)
-                .orElseThrow(() -> new AccessDeniedException("No teacher profile is associated with this account."));
+            .orElseThrow(() -> new AccessDeniedException("No teacher profile is associated with this account."));
         if (!"Active".equals(teacher.getStatus())) {
             throw new AccessDeniedException("This teacher profile is inactive.");
         }
@@ -267,7 +267,7 @@ public class AttendanceRecordService {
 
     private Teacher getActiveTeacher(Integer teacherId) {
         Teacher teacher = teacherRepository.findById(teacherId)
-                .orElseThrow(() -> new TeacherNotFoundException(teacherId));
+            .orElseThrow(() -> new TeacherNotFoundException(teacherId));
         if (!"Active".equals(teacher.getStatus())) {
             throw new AttendanceRecordConflictException("Attendance cannot be marked by an inactive teacher.");
         }

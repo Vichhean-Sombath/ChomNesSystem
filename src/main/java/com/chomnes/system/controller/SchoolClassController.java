@@ -43,16 +43,16 @@ public class SchoolClassController {
     public ResponseEntity<SchoolClassResponse> create(@Valid @RequestBody CreateSchoolClassRequest request) {
         SchoolClassResponse created = schoolClassService.create(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{classId}")
-                .buildAndExpand(created.classId())
-                .toUri();
+            .path("/{classId}")
+            .buildAndExpand(created.classId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping({"/{classId}", "/update/{classId}"})
     public SchoolClassResponse update(
-            @PathVariable Integer classId,
-            @Valid @RequestBody UpdateSchoolClassRequest request
+        @PathVariable Integer classId,
+        @Valid @RequestBody UpdateSchoolClassRequest request
     ) {
         return schoolClassService.update(classId, request);
     }

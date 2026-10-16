@@ -7,9 +7,9 @@ import jakarta.validation.constraints.Digits;
 import java.math.BigDecimal;
 
 public record UpdateGradeRequest(
-        @DecimalMin("0.00") @DecimalMax("9999.99") @Digits(integer = 4, fraction = 2)
-        BigDecimal score,
-        Boolean isPublished
+    @DecimalMin("0.00") @DecimalMax("9999.99") @Digits(integer = 4, fraction = 2)
+    BigDecimal score,
+    Boolean isPublished
 ) {
     public boolean isEmpty() {
         return score == null && isPublished == null;

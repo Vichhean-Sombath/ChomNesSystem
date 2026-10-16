@@ -43,16 +43,16 @@ public class TimeSlotController {
     public ResponseEntity<TimeSlotResponse> create(@Valid @RequestBody CreateTimeSlotRequest request) {
         TimeSlotResponse created = timeSlotService.create(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{timeSlotId}")
-                .buildAndExpand(created.timeSlotId())
-                .toUri();
+            .path("/{timeSlotId}")
+            .buildAndExpand(created.timeSlotId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping({"/{timeSlotId}", "/update/{timeSlotId}"})
     public TimeSlotResponse update(
-            @PathVariable Integer timeSlotId,
-            @Valid @RequestBody UpdateTimeSlotRequest request
+        @PathVariable Integer timeSlotId,
+        @Valid @RequestBody UpdateTimeSlotRequest request
     ) {
         return timeSlotService.update(timeSlotId, request);
     }

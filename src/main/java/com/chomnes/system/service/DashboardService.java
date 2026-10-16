@@ -23,11 +23,11 @@ public class DashboardService {
     private final SchoolClassRepository classes;
 
     public DashboardService(
-            PaymentRepository payments,
-            InvoiceRepository invoices,
-            StudentRepository students,
-            TeacherRepository teachers,
-            SchoolClassRepository classes
+        PaymentRepository payments,
+        InvoiceRepository invoices,
+        StudentRepository students,
+        TeacherRepository teachers,
+        SchoolClassRepository classes
     ) {
         this.payments = payments;
         this.invoices = invoices;
@@ -43,15 +43,15 @@ public class DashboardService {
         List<Teacher> teacherRows = teachers.findAll();
         BigDecimal revenue = sum(paymentRows);
         return object(
-                "kpis", object("totalRevenue", revenue, "totalRevenueFormatted", currency(revenue),
-                        "totalStudents", studentRows.size(), "totalTeachers", teacherRows.size(),
-                        "totalClasses", classes.count()),
-                "revenueTrend", revenueTrend(paymentRows, normalizeRange(range)),
-                "monthlyComparison", monthlyComparison(paymentRows),
-                "paymentMethods", paymentMethods(paymentRows),
-                "invoiceStatus", invoiceStatus(invoiceRows),
-                "newStudentsTrend", studentTrend(studentRows),
-                "recentPayments", recentPayments(paymentRows)
+            "kpis", object("totalRevenue", revenue, "totalRevenueFormatted", currency(revenue),
+                "totalStudents", studentRows.size(), "totalTeachers", teacherRows.size(),
+                "totalClasses", classes.count()),
+            "revenueTrend", revenueTrend(paymentRows, normalizeRange(range)),
+            "monthlyComparison", monthlyComparison(paymentRows),
+            "paymentMethods", paymentMethods(paymentRows),
+            "invoiceStatus", invoiceStatus(invoiceRows),
+            "newStudentsTrend", studentTrend(studentRows),
+            "recentPayments", recentPayments(paymentRows)
         );
     }
 
@@ -77,7 +77,7 @@ public class DashboardService {
             totals.merge(key, payment.getAmount() == null ? BigDecimal.ZERO : payment.getAmount(), BigDecimal::add);
         }
         List<String> labels = periods.stream().map(d -> "yearly".equals(range)
-                ? d.format(labelFormat) : d.format(labelFormat)).toList();
+            ? d.format(labelFormat) : d.format(labelFormat)).toList();
         List<BigDecimal> data = periods.stream().map(d -> totals.getOrDefault(periodKey(d, range), BigDecimal.ZERO)).toList();
         return object("labels", labels, "data", data);
     }
@@ -96,27 +96,27 @@ public class DashboardService {
         }
         BigDecimal difference = current.subtract(previous);
         BigDecimal percent = previous.signum() == 0
-                ? current.signum() > 0 ? BigDecimal.valueOf(100) : BigDecimal.ZERO
-                : difference.multiply(BigDecimal.valueOf(100)).divide(previous, 1, RoundingMode.HALF_UP).abs();
+            ? current.signum() > 0 ? BigDecimal.valueOf(100) : BigDecimal.ZERO
+            : difference.multiply(BigDecimal.valueOf(100)).divide(previous, 1, RoundingMode.HALF_UP).abs();
         return object("current", current, "currentFormatted", currency(current), "previous", previous,
-                "previousFormatted", currency(previous), "difference", difference,
-                "differenceFormatted", currency(difference.abs()), "percent", percent,
-                "direction", difference.signum() >= 0 ? "up" : "down");
+            "previousFormatted", currency(previous), "difference", difference,
+            "differenceFormatted", currency(difference.abs()), "percent", percent,
+            "direction", difference.signum() >= 0 ? "up" : "down");
     }
 
     private List<Map<String, Object>> paymentMethods(List<Payment> rows) {
         Map<String, BigDecimal> totals = rows.stream().collect(Collectors.groupingBy(
-                payment -> payment.getPaymentMethod() == null ? "Other" : payment.getPaymentMethod(),
-                LinkedHashMap::new,
-                Collectors.reducing(BigDecimal.ZERO,
-                        payment -> payment.getAmount() == null ? BigDecimal.ZERO : payment.getAmount(), BigDecimal::add)));
+            payment -> payment.getPaymentMethod() == null ? "Other" : payment.getPaymentMethod(),
+            LinkedHashMap::new,
+            Collectors.reducing(BigDecimal.ZERO,
+                payment -> payment.getAmount() == null ? BigDecimal.ZERO : payment.getAmount(), BigDecimal::add)));
         return totals.entrySet().stream().map(entry -> object("name", entry.getKey(), "value", entry.getValue())).toList();
     }
 
     private List<Map<String, Object>> invoiceStatus(List<Invoice> rows) {
         Map<String, Long> counts = rows.stream().collect(Collectors.groupingBy(
-                invoice -> invoice.getStatus() == null ? "Unknown" : invoice.getStatus(),
-                LinkedHashMap::new, Collectors.counting()));
+            invoice -> invoice.getStatus() == null ? "Unknown" : invoice.getStatus(),
+            LinkedHashMap::new, Collectors.counting()));
         return counts.entrySet().stream().map(entry -> object("name", entry.getKey(), "value", entry.getValue())).toList();
     }
 
@@ -124,9 +124,9 @@ public class DashboardService {
         LocalDate today = LocalDate.now();
         LocalDate first = today.withDayOfMonth(1).minusMonths(5);
         Map<String, Long> counts = rows.stream().filter(student -> student.getEnrollmentDate() != null
-                        && !student.getEnrollmentDate().isBefore(first))
-                .collect(Collectors.groupingBy(student -> student.getEnrollmentDate().format(DateTimeFormatter.ofPattern("yyyy-MM")),
-                        Collectors.counting()));
+                && !student.getEnrollmentDate().isBefore(first))
+            .collect(Collectors.groupingBy(student -> student.getEnrollmentDate().format(DateTimeFormatter.ofPattern("yyyy-MM")),
+                Collectors.counting()));
         List<String> labels = new ArrayList<>();
         List<Long> data = new ArrayList<>();
         for (int i = 5; i >= 0; i--) {
@@ -141,7 +141,7 @@ public class DashboardService {
         return rows.stream().limit(5).map(payment -> {
             Invoice invoice = payment.getInvoiceId() == null ? null : invoices.findById(payment.getInvoiceId()).orElse(null);
             return object("id", payment.getPaymentId(), "invoiceNumber", invoice == null ? "—" : invoice.getInvoiceNumber(),
-                    "amount", payment.getAmount(), "method", payment.getPaymentMethod(), "date", payment.getPaymentDate());
+                "amount", payment.getAmount(), "method", payment.getPaymentMethod(), "date", payment.getPaymentDate());
         }).toList();
     }
 
@@ -165,7 +165,7 @@ public class DashboardService {
 
     private String currency(BigDecimal amount) {
         return "$" + amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
-                .replaceAll("\\B(?=(\\d{3})+(?!\\d))", ",");
+            .replaceAll("\\B(?=(\\d{3})+(?!\\d))", ",");
     }
 
     private static Map<String, Object> object(Object... pairs) {

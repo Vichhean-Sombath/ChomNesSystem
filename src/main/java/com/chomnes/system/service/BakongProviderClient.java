@@ -1,12 +1,12 @@
 package com.chomnes.system.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import kh.gov.nbc.bakong_khqr.BakongKHQR;
-import kh.gov.nbc.bakong_khqr.KHQRCurrency;
-import kh.gov.nbc.bakong_khqr.KHQRData;
-import kh.gov.nbc.bakong_khqr.KHQRResponse;
-import kh.gov.nbc.bakong_khqr.IndividualInfo;
+import kh.gov.nbc.bakong_khqr.model.KHQRCurrency;
+import kh.gov.nbc.bakong_khqr.model.KHQRData;
+import kh.gov.nbc.bakong_khqr.model.KHQRResponse;
+import kh.gov.nbc.bakong_khqr.model.IndividualInfo;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +16,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
 
@@ -35,16 +34,16 @@ public class BakongProviderClient {
     private final BigDecimal khrPerUsd;
 
     public BakongProviderClient(
-            ObjectMapper objectMapper,
-            @Value("${app.payments.bakong.account-id:}") String accountId,
-            @Value("${app.payments.bakong.merchant-name:}") String merchantName,
-            @Value("${app.payments.bakong.merchant-city:}") String merchantCity,
-            @Value("${app.payments.bakong.merchant-phone:}") String merchantPhone,
-            @Value("${app.payments.bakong.store-label:}") String storeLabel,
-            @Value("${app.payments.bakong.api-url:https://api-bakong.nbc.gov.kh}") String apiUrl,
-            @Value("${app.payments.bakong.api-token:}") String apiToken,
-            @Value("${app.payments.bakong.api-enabled:false}") boolean apiEnabled,
-            @Value("${app.payments.bakong.khr-per-usd:4000}") BigDecimal khrPerUsd
+        ObjectMapper objectMapper,
+        @Value("${app.payments.bakong.account-id:}") String accountId,
+        @Value("${app.payments.bakong.merchant-name:}") String merchantName,
+        @Value("${app.payments.bakong.merchant-city:}") String merchantCity,
+        @Value("${app.payments.bakong.merchant-phone:}") String merchantPhone,
+        @Value("${app.payments.bakong.store-label:}") String storeLabel,
+        @Value("${app.payments.bakong.api-url:https://api-bakong.nbc.gov.kh}") String apiUrl,
+        @Value("${app.payments.bakong.api-token:}") String apiToken,
+        @Value("${app.payments.bakong.api-enabled:false}") boolean apiEnabled,
+        @Value("${app.payments.bakong.khr-per-usd:4000}") BigDecimal khrPerUsd
     ) {
         this.objectMapper = objectMapper;
         this.accountId = sanitize(accountId);
@@ -80,13 +79,13 @@ public class BakongProviderClient {
 
         KHQRResponse<KHQRData> response = BakongKHQR.generateIndividual(info);
         if (response == null || response.getKHQRStatus() == null || response.getKHQRStatus().getCode() != 0
-                || response.getData() == null || response.getData().getQr() == null) {
+            || response.getData() == null || response.getData().getQr() == null) {
             String message = response == null || response.getKHQRStatus() == null
-                    ? "KHQR generation failed." : response.getKHQRStatus().getMessage();
+                ? "KHQR generation failed." : response.getKHQRStatus().getMessage();
             throw new IllegalStateException(message == null || message.isBlank() ? "KHQR generation failed." : message);
         }
         return new GeneratedKhqr(response.getData().getQr(), response.getData().getMd5(), amountKhr,
-                amountUsd.setScale(2, java.math.RoundingMode.HALF_UP), expiryMillis, true);
+            amountUsd.setScale(2, java.math.RoundingMode.HALF_UP), expiryMillis, true);
     }
 
     public Map<String, Object> checkAccount() {
@@ -114,15 +113,15 @@ public class BakongProviderClient {
         try {
             byte[] body = objectMapper.writeValueAsBytes(bodyFields);
             HttpRequest request = HttpRequest.newBuilder(URI.create(apiUrl + path))
-                    .timeout(Duration.ofSeconds(15))
-                    .header("Authorization", "Bearer " + apiToken)
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofByteArray(body))
-                    .build();
+                .timeout(Duration.ofSeconds(15))
+                .header("Authorization", "Bearer " + apiToken)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofByteArray(body))
+                .build();
             HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
             JsonNode json = objectMapper.readTree(response.body());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new IllegalStateException(json.path("responseMessage").asText("Bakong API request failed."));
+                throw new IllegalStateException(json.path("responseMessage").asString("Bakong API request failed."));
             }
             return json;
         } catch (InterruptedException exception) {
@@ -154,11 +153,12 @@ public class BakongProviderClient {
     }
 
     public record GeneratedKhqr(
-            String qrString,
-            String md5,
-            BigDecimal amountKhr,
-            BigDecimal amountUsd,
-            long expirationTimestamp,
-            boolean verified
-    ) { }
+        String qrString,
+        String md5,
+        BigDecimal amountKhr,
+        BigDecimal amountUsd,
+        long expirationTimestamp,
+        boolean verified
+    ) {
+    }
 }

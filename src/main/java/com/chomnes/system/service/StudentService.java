@@ -32,9 +32,9 @@ public class StudentService {
     @Transactional(readOnly = true)
     public List<StudentResponse> findAll() {
         return studentRepository.findAll(Sort.by(Sort.Direction.ASC, "studentId"))
-                .stream()
-                .map(StudentResponse::from)
-                .toList();
+            .stream()
+            .map(StudentResponse::from)
+            .toList();
     }
 
     @Transactional(readOnly = true)
@@ -47,8 +47,8 @@ public class StudentService {
             throw new AccessDeniedException("This student profile is inactive.");
         }
         if (requesterRole != User.Role.Student
-                && requesterRole != User.Role.Teacher
-                && requesterRole != User.Role.Admin) {
+            && requesterRole != User.Role.Teacher
+            && requesterRole != User.Role.Admin) {
             throw new AccessDeniedException("You cannot access student profiles.");
         }
         return StudentResponse.from(student);
@@ -56,7 +56,7 @@ public class StudentService {
 
     public StudentResponse create(CreateStudentRequest request) {
         User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> new UserNotFoundException(request.userId()));
+            .orElseThrow(() -> new UserNotFoundException(request.userId()));
         if (user.getRole() != User.Role.Student) {
             throw new IllegalArgumentException("The linked user must have the Student role.");
         }
@@ -68,24 +68,24 @@ public class StudentService {
         }
 
         Student student = new Student(
-                user.getUserId(),
-                request.firstName().trim(),
-                request.lastName().trim(),
-                request.dob(),
-                request.gender(),
-                request.photoUrl(),
-                request.contactNumber(),
-                request.address(),
-                request.enrollmentDate() == null ? LocalDate.now() : request.enrollmentDate()
+            user.getUserId(),
+            request.firstName().trim(),
+            request.lastName().trim(),
+            request.dob(),
+            request.gender(),
+            request.photoUrl(),
+            request.contactNumber(),
+            request.address(),
+            request.enrollmentDate() == null ? LocalDate.now() : request.enrollmentDate()
         );
         return StudentResponse.from(studentRepository.save(student));
     }
 
     public StudentResponse update(
-            Integer studentId,
-            UpdateStudentRequest request,
-            Integer requesterId,
-            User.Role requesterRole
+        Integer studentId,
+        UpdateStudentRequest request,
+        Integer requesterId,
+        User.Role requesterRole
     ) {
         if (request.isEmpty()) {
             throw new IllegalArgumentException("Provide at least one student field to update.");
@@ -93,7 +93,7 @@ public class StudentService {
         Student student = getStudent(studentId);
         boolean administrator = requesterRole == User.Role.Admin;
         boolean studentOwner = requesterRole == User.Role.Student
-                && student.getUserId().equals(requesterId);
+            && student.getUserId().equals(requesterId);
         if (!administrator && !studentOwner) {
             throw new AccessDeniedException("Only an administrator or the student can update this profile.");
         }
@@ -121,7 +121,7 @@ public class StudentService {
         studentRepository.save(student);
         if (request.status() != null && "Inactive".equals(request.status())) {
             User user = userRepository.findById(student.getUserId())
-                    .orElseThrow(() -> new UserNotFoundException(student.getUserId()));
+                .orElseThrow(() -> new UserNotFoundException(student.getUserId()));
             user.setStatus(User.Status.Inactive);
             userRepository.save(user);
         }
@@ -133,14 +133,14 @@ public class StudentService {
         student.setStatus("Inactive");
         studentRepository.save(student);
         User user = userRepository.findById(student.getUserId())
-                .orElseThrow(() -> new UserNotFoundException(student.getUserId()));
+            .orElseThrow(() -> new UserNotFoundException(student.getUserId()));
         user.setStatus(User.Status.Inactive);
         userRepository.save(user);
     }
 
     private Student getStudent(Integer studentId) {
         return studentRepository.findById(studentId)
-                .orElseThrow(() -> new StudentNotFoundException(studentId));
+            .orElseThrow(() -> new StudentNotFoundException(studentId));
     }
 
     private String requireNonBlank(String value, String field) {

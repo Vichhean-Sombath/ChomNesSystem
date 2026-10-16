@@ -41,11 +41,11 @@ public class StudentEmergencyContact {
     }
 
     public StudentEmergencyContact(
-            Integer studentId,
-            String contactName,
-            String relationship,
-            String phoneNumber,
-            String email
+        Integer studentId,
+        String contactName,
+        String relationship,
+        String phoneNumber,
+        String email
     ) {
         this.studentId = studentId;
         this.contactName = contactName;

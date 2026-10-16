@@ -6,7 +6,6 @@ import com.chomnes.system.dto.UpdateLessonResourceRequest;
 import com.chomnes.system.exception.LessonResourceConflictException;
 import com.chomnes.system.exception.LessonResourceNotFoundException;
 import com.chomnes.system.exception.ScheduleNotFoundException;
-import com.chomnes.system.exception.StudentNotFoundException;
 import com.chomnes.system.exception.TeacherNotFoundException;
 import com.chomnes.system.model.ClassEnrollment;
 import com.chomnes.system.model.LessonResource;
@@ -35,11 +34,11 @@ public class LessonResourceService {
     private final ClassEnrollmentRepository enrollmentRepository;
 
     public LessonResourceService(
-            LessonResourceRepository resourceRepository,
-            ScheduleRepository scheduleRepository,
-            TeacherRepository teacherRepository,
-            StudentRepository studentRepository,
-            ClassEnrollmentRepository enrollmentRepository
+        LessonResourceRepository resourceRepository,
+        ScheduleRepository scheduleRepository,
+        TeacherRepository teacherRepository,
+        StudentRepository studentRepository,
+        ClassEnrollmentRepository enrollmentRepository
     ) {
         this.resourceRepository = resourceRepository;
         this.scheduleRepository = scheduleRepository;
@@ -52,36 +51,36 @@ public class LessonResourceService {
     public List<LessonResourceResponse> findAll(Integer requesterId, User.Role requesterRole) {
         if (requesterRole == User.Role.Admin) {
             return resourceRepository.findAllByOrderByUploadDateDescResourceIdDesc().stream()
-                    .map(LessonResourceResponse::from)
-                    .toList();
+                .map(LessonResourceResponse::from)
+                .toList();
         }
         if (requesterRole == User.Role.Teacher) {
             Teacher teacher = getActiveTeacherForUser(requesterId);
             return resourceRepository.findAllByTeacherIdOrderByUploadDateDescResourceIdDesc(teacher.getTeacherId())
-                    .stream()
-                    .map(LessonResourceResponse::from)
-                    .toList();
+                .stream()
+                .map(LessonResourceResponse::from)
+                .toList();
         }
         if (requesterRole == User.Role.Student) {
             Student student = getStudentForUser(requesterId);
             List<Integer> classIds = enrollmentRepository
-                    .findAllByStudentIdOrderByEnrollmentDateDescEnrollmentIdAsc(student.getStudentId()).stream()
-                    .filter(enrollment -> "Active".equals(enrollment.getStatus()))
-                    .map(ClassEnrollment::getClassId)
-                    .distinct()
-                    .toList();
+                .findAllByStudentIdOrderByEnrollmentDateDescEnrollmentIdAsc(student.getStudentId()).stream()
+                .filter(enrollment -> "Active".equals(enrollment.getStatus()))
+                .map(ClassEnrollment::getClassId)
+                .distinct()
+                .toList();
             if (classIds.isEmpty()) {
                 return List.of();
             }
             List<Integer> scheduleIds = scheduleRepository.findAllByClassIdIn(classIds).stream()
-                    .map(Schedule::getScheduleId)
-                    .toList();
+                .map(Schedule::getScheduleId)
+                .toList();
             if (scheduleIds.isEmpty()) {
                 return List.of();
             }
             return resourceRepository.findAllByScheduleIdInOrderByUploadDateDescResourceIdDesc(scheduleIds).stream()
-                    .map(LessonResourceResponse::from)
-                    .toList();
+                .map(LessonResourceResponse::from)
+                .toList();
         }
         throw new AccessDeniedException("You cannot access lesson resources.");
     }
@@ -94,28 +93,28 @@ public class LessonResourceService {
     }
 
     public LessonResourceResponse create(
-            CreateLessonResourceRequest request,
-            Integer requesterId,
-            User.Role requesterRole
+        CreateLessonResourceRequest request,
+        Integer requesterId,
+        User.Role requesterRole
     ) {
         Teacher teacher = resolveOwner(request.teacherId(), requesterId, requesterRole);
         validateSchedule(request.scheduleId(), teacher.getTeacherId());
         LessonResource resource = new LessonResource(
-                request.scheduleId(),
-                teacher.getTeacherId(),
-                requireNonBlank(request.title()),
-                request.description(),
-                request.resourceType(),
-                request.fileUrl()
+            request.scheduleId(),
+            teacher.getTeacherId(),
+            requireNonBlank(request.title()),
+            request.description(),
+            request.resourceType(),
+            request.fileUrl()
         );
         return LessonResourceResponse.from(resourceRepository.save(resource));
     }
 
     public LessonResourceResponse update(
-            Integer resourceId,
-            UpdateLessonResourceRequest request,
-            Integer requesterId,
-            User.Role requesterRole
+        Integer resourceId,
+        UpdateLessonResourceRequest request,
+        Integer requesterId,
+        User.Role requesterRole
     ) {
         if (request.isEmpty()) {
             throw new IllegalArgumentException("Provide at least one lesson resource field to update.");
@@ -125,8 +124,8 @@ public class LessonResourceService {
         authorizeManage(resource, requesterId, requesterRole);
 
         Integer scheduleId = Boolean.TRUE.equals(request.clearSchedule())
-                ? null
-                : request.scheduleId() == null ? resource.getScheduleId() : request.scheduleId();
+            ? null
+            : request.scheduleId() == null ? resource.getScheduleId() : request.scheduleId();
         validateSchedule(scheduleId, resource.getTeacherId());
         resource.setScheduleId(scheduleId);
         if (request.title() != null) {
@@ -175,7 +174,7 @@ public class LessonResourceService {
 
     private LessonResource getResource(Integer resourceId) {
         return resourceRepository.findById(resourceId)
-                .orElseThrow(() -> new LessonResourceNotFoundException(resourceId));
+            .orElseThrow(() -> new LessonResourceNotFoundException(resourceId));
     }
 
     private Teacher resolveOwner(Integer requestedTeacherId, Integer requesterId, User.Role requesterRole) {
@@ -185,7 +184,7 @@ public class LessonResourceService {
                 throw new IllegalArgumentException("teacherId is required when an administrator creates a resource.");
             }
             teacher = teacherRepository.findById(requestedTeacherId)
-                    .orElseThrow(() -> new TeacherNotFoundException(requestedTeacherId));
+                .orElseThrow(() -> new TeacherNotFoundException(requestedTeacherId));
         } else if (requesterRole == User.Role.Teacher) {
             teacher = getActiveTeacherForUser(requesterId);
             if (requestedTeacherId != null && !teacher.getTeacherId().equals(requestedTeacherId)) {
@@ -205,7 +204,7 @@ public class LessonResourceService {
             return;
         }
         Schedule schedule = scheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));
+            .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));
         if (!teacherId.equals(schedule.getTeacherId())) {
             throw new LessonResourceConflictException("The selected schedule does not belong to this resource's teacher.");
         }
@@ -228,9 +227,9 @@ public class LessonResourceService {
                 throw new AccessDeniedException("This lesson resource is not assigned to an enrolled schedule.");
             }
             Schedule schedule = scheduleRepository.findById(resource.getScheduleId())
-                    .orElseThrow(() -> new ScheduleNotFoundException(resource.getScheduleId()));
+                .orElseThrow(() -> new ScheduleNotFoundException(resource.getScheduleId()));
             if (!enrollmentRepository.existsByStudentIdAndClassIdAndStatus(
-                    student.getStudentId(), schedule.getClassId(), "Active"
+                student.getStudentId(), schedule.getClassId(), "Active"
             )) {
                 throw new AccessDeniedException("Students can only access resources for their active classes.");
             }
@@ -266,7 +265,7 @@ public class LessonResourceService {
 
     private Teacher getActiveTeacherForUser(Integer userId) {
         Teacher teacher = teacherRepository.findByUserId(userId)
-                .orElseThrow(() -> new AccessDeniedException("No teacher profile is associated with this account."));
+            .orElseThrow(() -> new AccessDeniedException("No teacher profile is associated with this account."));
         if (!"Active".equals(teacher.getStatus())) {
             throw new AccessDeniedException("This teacher profile is inactive.");
         }
@@ -275,7 +274,7 @@ public class LessonResourceService {
 
     private Student getStudentForUser(Integer userId) {
         return studentRepository.findByUserId(userId)
-                .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
+            .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
     }
 
     private String requireNonBlank(String value) {

@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+
 import java.time.LocalDate;
 import java.math.BigDecimal;
 
@@ -52,14 +53,14 @@ public class Payment {
     }
 
     public Payment(
-            Integer invoiceId,
-            LocalDate paymentDate,
-            BigDecimal amount,
-            String paymentMethod,
-            String receiptUrl,
-            String transactionReference,
-            Integer recordedBy,
-            String notes
+        Integer invoiceId,
+        LocalDate paymentDate,
+        BigDecimal amount,
+        String paymentMethod,
+        String receiptUrl,
+        String transactionReference,
+        Integer recordedBy,
+        String notes
     ) {
         this.invoiceId = invoiceId;
         this.paymentDate = paymentDate;

@@ -7,8 +7,8 @@ import jakarta.validation.constraints.Positive;
 import java.time.LocalDate;
 
 public record StudentAttendanceCheckInRequest(
-        @NotNull @Positive Integer scheduleId,
-        @NotNull LocalDate attendanceDate,
-        @NotBlank String token
+    @NotNull @Positive Integer scheduleId,
+    @NotNull LocalDate attendanceDate,
+    @NotBlank String token
 ) {
 }

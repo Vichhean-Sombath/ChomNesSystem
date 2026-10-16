@@ -23,8 +23,8 @@ public class StudentEmergencyContactService {
     private final StudentRepository studentRepository;
 
     public StudentEmergencyContactService(
-            StudentEmergencyContactRepository contactRepository,
-            StudentRepository studentRepository
+        StudentEmergencyContactRepository contactRepository,
+        StudentRepository studentRepository
     ) {
         this.contactRepository = contactRepository;
         this.studentRepository = studentRepository;
@@ -34,21 +34,21 @@ public class StudentEmergencyContactService {
     public List<StudentEmergencyContactResponse> findAll(Integer requesterId, User.Role requesterRole) {
         if (requesterRole == User.Role.Admin) {
             return contactRepository.findAllByOrderByContactNameAscContactIdAsc().stream()
-                    .map(StudentEmergencyContactResponse::from)
-                    .toList();
+                .map(StudentEmergencyContactResponse::from)
+                .toList();
         }
         Student student = requireStudentOwner(requesterId, requesterRole);
         return contactRepository.findAllByStudentIdOrderByContactNameAscContactIdAsc(student.getStudentId())
-                .stream()
-                .map(StudentEmergencyContactResponse::from)
-                .toList();
+            .stream()
+            .map(StudentEmergencyContactResponse::from)
+            .toList();
     }
 
     @Transactional(readOnly = true)
     public StudentEmergencyContactResponse findById(
-            Integer contactId,
-            Integer requesterId,
-            User.Role requesterRole
+        Integer contactId,
+        Integer requesterId,
+        User.Role requesterRole
     ) {
         StudentEmergencyContact contact = getContact(contactId);
         authorize(contact, requesterId, requesterRole);
@@ -56,9 +56,9 @@ public class StudentEmergencyContactService {
     }
 
     public StudentEmergencyContactResponse create(
-            CreateStudentEmergencyContactRequest request,
-            Integer requesterId,
-            User.Role requesterRole
+        CreateStudentEmergencyContactRequest request,
+        Integer requesterId,
+        User.Role requesterRole
     ) {
         Student student;
         if (requesterRole == User.Role.Admin) {
@@ -66,7 +66,7 @@ public class StudentEmergencyContactService {
                 throw new IllegalArgumentException("studentId is required when an administrator creates a contact.");
             }
             student = studentRepository.findById(request.studentId())
-                    .orElseThrow(() -> new StudentNotFoundException(request.studentId()));
+                .orElseThrow(() -> new StudentNotFoundException(request.studentId()));
         } else {
             student = requireStudentOwner(requesterId, requesterRole);
             if (request.studentId() != null && !student.getStudentId().equals(request.studentId())) {
@@ -75,20 +75,20 @@ public class StudentEmergencyContactService {
         }
 
         StudentEmergencyContact contact = new StudentEmergencyContact(
-                student.getStudentId(),
-                requireNonBlank(request.contactName(), "Contact name"),
-                optionalText(request.relationship()),
-                requireNonBlank(request.phoneNumber(), "Phone number"),
-                optionalText(request.email())
+            student.getStudentId(),
+            requireNonBlank(request.contactName(), "Contact name"),
+            optionalText(request.relationship()),
+            requireNonBlank(request.phoneNumber(), "Phone number"),
+            optionalText(request.email())
         );
         return StudentEmergencyContactResponse.from(contactRepository.save(contact));
     }
 
     public StudentEmergencyContactResponse update(
-            Integer contactId,
-            UpdateStudentEmergencyContactRequest request,
-            Integer requesterId,
-            User.Role requesterRole
+        Integer contactId,
+        UpdateStudentEmergencyContactRequest request,
+        Integer requesterId,
+        User.Role requesterRole
     ) {
         if (request.isEmpty()) {
             throw new IllegalArgumentException("Provide at least one contact field to update.");
@@ -129,7 +129,7 @@ public class StudentEmergencyContactService {
 
     private StudentEmergencyContact getContact(Integer contactId) {
         return contactRepository.findById(contactId)
-                .orElseThrow(() -> new StudentEmergencyContactNotFoundException(contactId));
+            .orElseThrow(() -> new StudentEmergencyContactNotFoundException(contactId));
     }
 
     private void authorize(StudentEmergencyContact contact, Integer requesterId, User.Role requesterRole) {
@@ -147,7 +147,7 @@ public class StudentEmergencyContactService {
             throw new AccessDeniedException("Only an administrator or the student can access emergency contacts.");
         }
         Student student = studentRepository.findByUserId(requesterId)
-                .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
+            .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
         if (!"Active".equals(student.getStatus())) {
             throw new AccessDeniedException("This student profile is inactive.");
         }

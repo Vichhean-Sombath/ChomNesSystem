@@ -43,16 +43,16 @@ public class ScheduleController {
     public ResponseEntity<ScheduleResponse> create(@Valid @RequestBody CreateScheduleRequest request) {
         ScheduleResponse created = scheduleService.create(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{scheduleId}")
-                .buildAndExpand(created.scheduleId())
-                .toUri();
+            .path("/{scheduleId}")
+            .buildAndExpand(created.scheduleId())
+            .toUri();
         return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping({"/{scheduleId}", "/update/{scheduleId}"})
     public ScheduleResponse update(
-            @PathVariable Integer scheduleId,
-            @Valid @RequestBody UpdateScheduleRequest request
+        @PathVariable Integer scheduleId,
+        @Valid @RequestBody UpdateScheduleRequest request
     ) {
         return scheduleService.update(scheduleId, request);
     }

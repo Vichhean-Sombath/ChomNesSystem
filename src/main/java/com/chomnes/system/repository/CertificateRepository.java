@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public interface CertificateRepository extends JpaRepository<Certificate, Integer> {
     Optional<Certificate> findByGeneratedFileUrl(String generatedFileUrl);
+
     List<Certificate> findAllByOrderByIssueDateDescCertificateIdDesc();
 
     List<Certificate> findAllByStudentIdOrderByIssueDateDescCertificateIdDesc(Integer studentId);

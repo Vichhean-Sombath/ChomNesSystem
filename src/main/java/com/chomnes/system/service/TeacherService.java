@@ -31,16 +31,16 @@ public class TeacherService {
     @Transactional(readOnly = true)
     public List<TeacherResponse> findAll() {
         return teacherRepository.findAll(Sort.by(Sort.Direction.ASC, "teacherId"))
-                .stream()
-                .map(TeacherResponse::from)
-                .toList();
+            .stream()
+            .map(TeacherResponse::from)
+            .toList();
     }
 
     @Transactional(readOnly = true)
     public TeacherResponse findById(Integer teacherId, Integer requesterId, User.Role requesterRole) {
         Teacher teacher = getTeacher(teacherId);
         if (requesterRole != User.Role.Admin
-                && (requesterRole != User.Role.Teacher || !teacher.getUserId().equals(requesterId))) {
+            && (requesterRole != User.Role.Teacher || !teacher.getUserId().equals(requesterId))) {
             throw new AccessDeniedException("You can only access your own teacher profile.");
         }
         if (requesterRole == User.Role.Teacher && "Inactive".equals(teacher.getStatus())) {
@@ -51,7 +51,7 @@ public class TeacherService {
 
     public TeacherResponse create(CreateTeacherRequest request) {
         User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> new UserNotFoundException(request.userId()));
+            .orElseThrow(() -> new UserNotFoundException(request.userId()));
         if (user.getRole() != User.Role.Teacher) {
             throw new IllegalArgumentException("The linked user must have the Teacher role.");
         }
@@ -63,25 +63,25 @@ public class TeacherService {
         }
 
         Teacher teacher = new Teacher(
-                user.getUserId(),
-                request.firstName().trim(),
-                request.lastName().trim(),
-                request.dob(),
-                request.gender(),
-                request.photoUrl(),
-                request.contactNumber(),
-                request.specialization(),
-                request.bio(),
-                request.hireDate()
+            user.getUserId(),
+            request.firstName().trim(),
+            request.lastName().trim(),
+            request.dob(),
+            request.gender(),
+            request.photoUrl(),
+            request.contactNumber(),
+            request.specialization(),
+            request.bio(),
+            request.hireDate()
         );
         return TeacherResponse.from(teacherRepository.save(teacher));
     }
 
     public TeacherResponse update(
-            Integer teacherId,
-            UpdateTeacherRequest request,
-            Integer requesterId,
-            User.Role requesterRole
+        Integer teacherId,
+        UpdateTeacherRequest request,
+        Integer requesterId,
+        User.Role requesterRole
     ) {
         if (request.isEmpty()) {
             throw new IllegalArgumentException("Provide at least one teacher field to update.");
@@ -89,7 +89,7 @@ public class TeacherService {
         Teacher teacher = getTeacher(teacherId);
         boolean administrator = requesterRole == User.Role.Admin;
         boolean teacherOwner = requesterRole == User.Role.Teacher
-                && teacher.getUserId().equals(requesterId);
+            && teacher.getUserId().equals(requesterId);
         if (!administrator && !teacherOwner) {
             throw new AccessDeniedException("Only an administrator or the teacher can update this profile.");
         }
@@ -127,12 +127,12 @@ public class TeacherService {
 
     private Teacher getTeacher(Integer teacherId) {
         return teacherRepository.findById(teacherId)
-                .orElseThrow(() -> new TeacherNotFoundException(teacherId));
+            .orElseThrow(() -> new TeacherNotFoundException(teacherId));
     }
 
     private User getLinkedUser(Integer userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+            .orElseThrow(() -> new UserNotFoundException(userId));
     }
 
     private String requireNonBlank(String value, String field) {

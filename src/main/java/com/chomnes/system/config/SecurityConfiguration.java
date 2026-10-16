@@ -48,8 +48,8 @@ public class SecurityConfiguration {
     @Bean
     public JwtDecoder jwtDecoder(SecretKey jwtSecretKey) {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(jwtSecretKey)
-                .macAlgorithm(org.springframework.security.oauth2.jose.jws.MacAlgorithm.HS256)
-                .build();
+            .macAlgorithm(org.springframework.security.oauth2.jose.jws.MacAlgorithm.HS256)
+            .build();
         OAuth2TokenValidator<Jwt> validator = JwtValidators.createDefaultWithIssuer("chomnes-system");
         decoder.setJwtValidator(validator);
         return decoder;
@@ -68,13 +68,13 @@ public class SecurityConfiguration {
 
     @Bean
     public SecurityFilterChain securityFilterChain(
-            HttpSecurity http,
-            JwtAuthenticationConverter jwtAuthenticationConverter
+        HttpSecurity http,
+        JwtAuthenticationConverter jwtAuthenticationConverter
     ) throws Exception {
         return http
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(authorize -> authorize
+            .csrf(AbstractHttpConfigurer::disable)
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/bootstrap-admin").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users").hasRole("Admin")
@@ -243,10 +243,10 @@ public class SecurityConfiguration {
                                 "/class-enrollment/**", "/time-slot/**", "/grading-criteria/**")
                                 .hasRole("Admin")
                         .anyRequest().authenticated()
-                )
-                .oauth2ResourceServer(resourceServer -> resourceServer
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
-                )
-                .build();
+            )
+            .oauth2ResourceServer(resourceServer -> resourceServer
+                .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
+            )
+            .build();
     }
 }

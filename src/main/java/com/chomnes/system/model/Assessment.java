@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+
 import java.time.LocalDate;
 import java.math.BigDecimal;
 
@@ -40,11 +41,11 @@ public class Assessment {
     }
 
     public Assessment(
-            Integer scheduleId,
-            Integer criteriaId,
-            String assessmentName,
-            BigDecimal maxScore,
-            LocalDate assessmentDate
+        Integer scheduleId,
+        Integer criteriaId,
+        String assessmentName,
+        BigDecimal maxScore,
+        LocalDate assessmentDate
     ) {
         this.scheduleId = scheduleId;
         this.criteriaId = criteriaId;

@@ -12,7 +12,7 @@ import com.chomnes.system.model.User;
 import com.chomnes.system.repository.FeeStructureRepository;
 import com.chomnes.system.repository.InvoiceRepository;
 import com.chomnes.system.repository.StudentRepository;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,13 +37,13 @@ public class PaymentIntegrationService {
     private final StudentRepository students;
 
     public PaymentIntegrationService(
-            StripeProviderClient stripe,
-            BakongProviderClient bakong,
-            PaymentService payments,
-            BakongQrRequestService qrRequests,
-            InvoiceRepository invoices,
-            FeeStructureRepository fees,
-            StudentRepository students
+        StripeProviderClient stripe,
+        BakongProviderClient bakong,
+        PaymentService payments,
+        BakongQrRequestService qrRequests,
+        InvoiceRepository invoices,
+        FeeStructureRepository fees,
+        StudentRepository students
     ) {
         this.stripe = stripe;
         this.bakong = bakong;
@@ -61,11 +61,11 @@ public class PaymentIntegrationService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> createStripeCheckout(
-            Integer invoiceId,
-            String successUrl,
-            String cancelUrl,
-            Integer requesterId,
-            User.Role requesterRole
+        Integer invoiceId,
+        String successUrl,
+        String cancelUrl,
+        Integer requesterId,
+        User.Role requesterRole
     ) {
         Invoice invoice = getInvoice(invoiceId);
         authorizeInvoiceOwner(invoice, requesterId, requesterRole);
@@ -75,7 +75,7 @@ public class PaymentIntegrationService {
         FeeStructure fee = fees.findById(invoice.getFeeId()).orElse(null);
         String feeName = fee == null ? "School fee" : fee.getFeeName();
         StripeProviderClient.StripeSession session = stripe.createCheckoutSession(invoice.getInvoiceId(),
-                invoice.getStudentId(), invoice.getInvoiceNumber(), feeName, amountCents, successUrl, cancelUrl);
+            invoice.getStudentId(), invoice.getInvoiceNumber(), feeName, amountCents, successUrl, cancelUrl);
         if (session.id() == null || session.url() == null) {
             throw new IllegalStateException("Stripe did not return an active checkout session URL.");
         }
@@ -91,7 +91,7 @@ public class PaymentIntegrationService {
     public PaymentResponse verifyStripeCheckout(String sessionId, Integer requesterId, User.Role requesterRole) {
         StripeProviderClient.StripeSession session = stripe.retrieveCheckoutSession(sessionId);
         if (session.id() == null || !"paid".equalsIgnoreCase(session.paymentStatus()) || session.amountTotal() == null
-                || !"usd".equalsIgnoreCase(session.currency()) || session.invoiceId() == null) {
+            || !"usd".equalsIgnoreCase(session.currency()) || session.invoiceId() == null) {
             throw new IllegalArgumentException("Payment not completed or invoice not found.");
         }
         Integer invoiceId = parseId(session.invoiceId(), "Stripe session invoice ID is invalid.");
@@ -106,9 +106,10 @@ public class PaymentIntegrationService {
 
     public void handleStripeWebhook(byte[] rawBody, String signature) {
         JsonNode event = stripe.verifyAndParseWebhook(rawBody, signature);
-        String type = event.path("type").asText("");
-        if (!"checkout.session.completed".equals(type) && !"checkout.session.async_payment_succeeded".equals(type)) return;
-        String sessionId = event.path("data").path("object").path("id").asText(null);
+        String type = event.path("type").asString("");
+        if (!"checkout.session.completed".equals(type) && !"checkout.session.async_payment_succeeded".equals(type))
+            return;
+        String sessionId = event.path("data").path("object").path("id").asString(null);
         if (sessionId != null) verifyStripeCheckout(sessionId, null, User.Role.Admin);
     }
 
@@ -122,13 +123,13 @@ public class PaymentIntegrationService {
             throw new IllegalStateException("KHQR generation did not return a valid MD5 transaction key.");
         }
         LocalDateTime expiresAt = LocalDateTime.ofInstant(Instant.ofEpochMilli(generated.expirationTimestamp()),
-                ZoneId.systemDefault());
+            ZoneId.systemDefault());
         BakongQrRequestResponse saved = qrRequests.createGenerated(invoice.getInvoiceId(), generated.md5(),
-                generated.amountKhr(), generated.amountUsd(), expiresAt, requesterId, requesterRole);
+            generated.amountKhr(), generated.amountUsd(), expiresAt, requesterId, requesterRole);
         return object("qr_string", generated.qrString(), "md5", generated.md5(), "qr_id", saved.qrId(),
-                "amount", generated.amountKhr(), "currency", "KHR", "invoice_id", invoice.getInvoiceId(),
-                "invoice_number", invoice.getInvoiceNumber(), "expiration_timestamp", generated.expirationTimestamp(),
-                "verified", generated.verified());
+            "amount", generated.amountKhr(), "currency", "KHR", "invoice_id", invoice.getInvoiceId(),
+            "invoice_number", invoice.getInvoiceNumber(), "expiration_timestamp", generated.expirationTimestamp(),
+            "verified", generated.verified());
     }
 
     public Map<String, Object> verifyBakong(String md5, Integer requesterId, User.Role requesterRole) {
@@ -161,9 +162,9 @@ public class PaymentIntegrationService {
             result = bakong.checkTransactionByMd5(md5);
             JsonNode transaction = result.path("data");
             if (result.path("responseCode").asInt(-1) == 0 && transaction.isObject()) {
-                String currency = transaction.path("currency").asText("KHR").toUpperCase();
+                String currency = transaction.path("currency").asString("KHR").toUpperCase();
                 BigDecimal rawAmount = decimal(transaction.path("amount"));
-                String receivedAccount = transaction.path("toAccountId").asText("");
+                String receivedAccount = transaction.path("toAccountId").asString("");
                 if (receivedAccount.isBlank() || !receivedAccount.equalsIgnoreCase(bakong.accountId())) {
                     throw new IllegalArgumentException("Bakong transaction was paid to a different merchant account.");
                 }
@@ -180,9 +181,9 @@ public class PaymentIntegrationService {
                     matched = false;
                 }
                 if (rawAmount.signum() > 0 && matched) {
-                    String transactionHash = transaction.path("hash").asText(md5);
+                    String transactionHash = transaction.path("hash").asString(md5);
                     PaymentResponse saved = payments.recordGatewayPayment(qr.getInvoiceId(), amountUsd,
-                            "BakongKHQR", transactionHash, transaction.path("receiptUrl").asText(null));
+                        "BakongKHQR", transactionHash, transaction.path("receiptUrl").asString(null));
                     paymentId = saved.paymentId();
                     qrRequests.markStatus(md5, "Paid");
                 } else if (rawAmount.signum() > 0) {
@@ -192,10 +193,10 @@ public class PaymentIntegrationService {
         }
         BakongQrRequest refreshed = qrRequests.findByMd5ForRequester(md5, null, User.Role.Admin);
         Map<String, Object> response = object("md5", refreshed.getMd5(), "invoice_id", refreshed.getInvoiceId(),
-                "status", refreshed.getStatus(), "paid", "Paid".equals(refreshed.getStatus()),
-                "expired", "Expired".equals(refreshed.getStatus()), "amount_khr", refreshed.getAmountKhr(),
-                "amount_usd", refreshed.getAmountUsd(), "expires_at", refreshed.getExpiresAt(),
-                "paid_at", refreshed.getPaidAt(), "payment_id", paymentId);
+            "status", refreshed.getStatus(), "paid", "Paid".equals(refreshed.getStatus()),
+            "expired", "Expired".equals(refreshed.getStatus()), "amount_khr", refreshed.getAmountKhr(),
+            "amount_usd", refreshed.getAmountUsd(), "expires_at", refreshed.getExpiresAt(),
+            "paid_at", refreshed.getPaidAt(), "payment_id", paymentId);
         if (includeStatus) response.put("bakong_status", result);
         return response;
     }
@@ -206,9 +207,10 @@ public class PaymentIntegrationService {
 
     private void authorizeInvoiceOwner(Invoice invoice, Integer requesterId, User.Role requesterRole) {
         if (requesterRole == User.Role.Admin) return;
-        if (requesterRole != User.Role.Student) throw new AccessDeniedException("You are not authorized to pay this invoice.");
+        if (requesterRole != User.Role.Student)
+            throw new AccessDeniedException("You are not authorized to pay this invoice.");
         Student student = students.findByUserId(requesterId)
-                .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
+            .orElseThrow(() -> new AccessDeniedException("No student profile is associated with this account."));
         if (!student.getStudentId().equals(invoice.getStudentId())) {
             throw new AccessDeniedException("You are not authorized to pay this invoice.");
         }
@@ -228,14 +230,14 @@ public class PaymentIntegrationService {
 
     private BigDecimal decimal(JsonNode value) {
         try {
-            return new BigDecimal(value.asText());
+            return new BigDecimal(value.asString());
         } catch (NumberFormatException exception) {
             return BigDecimal.ZERO;
         }
     }
 
     private String firstText(JsonNode first, JsonNode second) {
-        String value = first.isTextual() ? first.asText() : second.isTextual() ? second.asText() : null;
+        String value = first.isString() ? first.asString() : second.isString() ? second.asString() : null;
         return value == null || value.isBlank() ? null : value;
     }
 

@@ -1,7 +1,7 @@
 # Scholaris API Feature Parity Contract
 
 **Stage:** 1 — Define the parity contract  
-**Status:** Stages 1–7 implemented for the tracked management, portal, attendance QR, dashboard, reports, payment-provider, private file delivery, and optional payment-notification scope. Stage 8 release audit is complete but the project is **not release-verified**: related-record response differences remain, and Maven could not resolve the Spring Boot parent because repository access was denied.
+**Status:** Stages 1–7 implemented for the tracked management, portal, attendance QR, dashboard, reports, payment-provider, private file delivery, and optional payment-notification scope. Stage 8 source compilation now passes, but the project is **not release-verified**: related-record response differences remain and Maven could not run the test phase because its Surefire dependencies are unavailable offline.
 **Reference:** `../ScholarisAPI` (local Scholaris API source and README).  
 **Target:** `ChomNesSystem` Spring Boot API.
 
@@ -111,11 +111,11 @@ Implementation evidence: `FileStorageService.java`, `StoredFileController.java`,
 
 The release audit reviewed Scholaris populate behavior, Spring compatibility response mapping, endpoint role rules, file-delivery authorization, provider configuration, and available build verification. It confirmed that the Scholaris compatibility advice converts JSON naming and wraps responses, but some management responses still expose foreign-key IDs where Scholaris returns populated records. The gaps include relationships in academic years, semesters, classes, subjects, enrollments, time slots, schedules, attendance, grading criteria, assessments, grades, final grades, fee structures, invoices, payments, certificates, and emergency contacts. These differences must be reconciled before claiming complete API-response parity.
 
-`mvn -B test` could not start because Maven's configured local repository (`C:\.m2\repository`) is not writable. A retry with a project-local Maven settings file reached dependency resolution but Maven Central denied access while retrieving `spring-boot-starter-parent:4.1.1`. No test sources are present in this project snapshot, and compile/runtime behavior is therefore unverified. This is an environment limitation, not evidence of a successful release build.
+`mvn -o -B clean compile` succeeded using the cached dependencies copied into a temporary project-local repository; all 228 Java source files compiled. The `mvn test` attempt compiled production sources but could not resolve Surefire 3.5.6 dependencies in offline mode, and Maven Central access is denied here. The test directories contain no test sources. Database and provider runtime behavior therefore remains unverified. The test-phase failure is an environment limitation, not a source compilation failure.
 
 Before release, run `mvn test` in an environment with Maven Central access and a writable local repository; address the populated-relation contract differences; configure production database/JWT secrets and provider credentials for enabled payment methods; configure `FILE_STORAGE_DIR` as durable storage shared by all API instances; and perform authenticated role-based smoke checks for the Scholaris compatibility routes, file access, Stripe callbacks, and Bakong verification. Email and Telegram remain optional and need credentials only when enabled.
 
-Release audit evidence: `ScholarisCompatibilityAdvice.java`, `SecurityConfiguration.java`, `SCHOLARIS_PARITY_CONTRACT.md`, and Maven test attempts recorded for this stage.
+Release audit evidence: successful clean compilation, the blocked Maven test phase, `ScholarisCompatibilityAdvice.java`, `SecurityConfiguration.java`, and `SCHOLARIS_PARITY_CONTRACT.md`.
 
 ## 11. Business behavior that must be preserved
 

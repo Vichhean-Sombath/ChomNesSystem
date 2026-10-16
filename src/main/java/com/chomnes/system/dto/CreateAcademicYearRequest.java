@@ -7,8 +7,8 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
 public record CreateAcademicYearRequest(
-        @NotBlank @Size(max = 20) String yearName,
-        @NotNull LocalDate startDate,
-        @NotNull LocalDate endDate
+    @NotBlank @Size(max = 20) String yearName,
+    @NotNull LocalDate startDate,
+    @NotNull LocalDate endDate
 ) {
 }

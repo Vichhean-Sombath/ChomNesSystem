@@ -27,9 +27,9 @@ public class SubjectService {
     @Transactional(readOnly = true)
     public List<SubjectResponse> findAll() {
         return subjectRepository.findAll(Sort.by(Sort.Direction.ASC, "subjectCode"))
-                .stream()
-                .map(SubjectResponse::from)
-                .toList();
+            .stream()
+            .map(SubjectResponse::from)
+            .toList();
     }
 
     @Transactional(readOnly = true)
@@ -46,10 +46,10 @@ public class SubjectService {
         validatePrerequisiteExists(request.prerequisiteSubjectId());
 
         Subject subject = new Subject(
-                subjectCode,
-                subjectName,
-                request.description(),
-                request.prerequisiteSubjectId()
+            subjectCode,
+            subjectName,
+            request.description(),
+            request.prerequisiteSubjectId()
         );
         return SubjectResponse.from(subjectRepository.save(subject));
     }
@@ -59,9 +59,9 @@ public class SubjectService {
             throw new IllegalArgumentException("Provide at least one subject field to update.");
         }
         if (Boolean.TRUE.equals(request.clearPrerequisiteSubject())
-                && request.prerequisiteSubjectId() != null) {
+            && request.prerequisiteSubjectId() != null) {
             throw new IllegalArgumentException(
-                    "Set either prerequisiteSubjectId or clearPrerequisiteSubject, not both."
+                "Set either prerequisiteSubjectId or clearPrerequisiteSubject, not both."
             );
         }
         if (Boolean.TRUE.equals(request.clearDescription()) && request.description() != null) {
@@ -70,21 +70,21 @@ public class SubjectService {
 
         Subject subject = getSubject(subjectId);
         String subjectCode = request.subjectCode() == null
-                ? subject.getSubjectCode()
-                : requireNonBlank(request.subjectCode(), "Subject code");
+            ? subject.getSubjectCode()
+            : requireNonBlank(request.subjectCode(), "Subject code");
         String subjectName = request.subjectName() == null
-                ? subject.getSubjectName()
-                : requireNonBlank(request.subjectName(), "Subject name");
+            ? subject.getSubjectName()
+            : requireNonBlank(request.subjectName(), "Subject name");
         if (!subjectCode.equals(subject.getSubjectCode())
-                && subjectRepository.existsBySubjectCodeAndSubjectIdNot(subjectCode, subjectId)) {
+            && subjectRepository.existsBySubjectCodeAndSubjectIdNot(subjectCode, subjectId)) {
             throw new SubjectConflictException("A subject with this code already exists.");
         }
 
         Integer prerequisiteSubjectId = Boolean.TRUE.equals(request.clearPrerequisiteSubject())
-                ? null
-                : request.prerequisiteSubjectId() == null
-                        ? subject.getPrerequisiteSubjectId()
-                        : request.prerequisiteSubjectId();
+            ? null
+            : request.prerequisiteSubjectId() == null
+            ? subject.getPrerequisiteSubjectId()
+            : request.prerequisiteSubjectId();
         validatePrerequisite(subjectId, prerequisiteSubjectId);
 
         subject.setSubjectCode(subjectCode);
@@ -105,7 +105,7 @@ public class SubjectService {
 
     private Subject getSubject(Integer subjectId) {
         return subjectRepository.findById(subjectId)
-                .orElseThrow(() -> new SubjectNotFoundException(subjectId));
+            .orElseThrow(() -> new SubjectNotFoundException(subjectId));
     }
 
     private void validatePrerequisiteExists(Integer prerequisiteSubjectId) {
