@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class StripeProviderClient {
+public class StripeProviderClient implements StripeGateway {
     private static final String API_URL = "https://api.stripe.com/v1";
     private static final long SIGNATURE_TOLERANCE_SECONDS = 300;
     private final ObjectMapper objectMapper;
@@ -54,7 +54,7 @@ public class StripeProviderClient {
         return publicKey;
     }
 
-    public StripeSession createCheckoutSession(
+    public StripeGateway.StripeSession createCheckoutSession(
         Integer invoiceId,
         Integer studentId,
         String invoiceNumber,
@@ -89,7 +89,7 @@ public class StripeProviderClient {
         return parseSession(send("POST", "/checkout/sessions", form));
     }
 
-    public StripeSession retrieveCheckoutSession(String sessionId) {
+    public StripeGateway.StripeSession retrieveCheckoutSession(String sessionId) {
         requireSecretKey();
         if (sessionId == null || !sessionId.matches("cs_[A-Za-z0-9_]+")) {
             throw new IllegalArgumentException("A valid Stripe checkout session ID is required.");
@@ -97,7 +97,7 @@ public class StripeProviderClient {
         return parseSession(send("GET", "/checkout/sessions/" + sessionId, Map.of()));
     }
 
-    public JsonNode verifyAndParseWebhook(byte[] payload, String signatureHeader) {
+    public StripeGateway.StripeWebhookEvent verifyWebhook(byte[] payload, String signatureHeader) {
         if (webhookSecret.isBlank()) throw new IllegalStateException("Stripe webhook secret not configured.");
         if (payload == null || signatureHeader == null || signatureHeader.isBlank()) {
             throw new IllegalArgumentException("Stripe webhook signature is missing.");
@@ -135,7 +135,11 @@ public class StripeProviderClient {
         });
         if (!valid) throw new IllegalArgumentException("Stripe webhook signature verification failed.");
         try {
-            return objectMapper.readTree(payload);
+            JsonNode event = objectMapper.readTree(payload);
+            return new StripeGateway.StripeWebhookEvent(
+                event.path("type").asString(""),
+                event.path("data").path("object").path("id").asString(null)
+            );
         } catch (JacksonException exception) {
             throw new IllegalArgumentException("Stripe webhook body is not valid JSON.");
         }
@@ -172,9 +176,9 @@ public class StripeProviderClient {
         }
     }
 
-    private StripeSession parseSession(JsonNode json) {
+    private StripeGateway.StripeSession parseSession(JsonNode json) {
         JsonNode metadata = json.path("metadata");
-        return new StripeSession(json.path("id").asString(null), json.path("url").asString(null),
+        return new StripeGateway.StripeSession(json.path("id").asString(null), json.path("url").asString(null),
             json.path("payment_status").asString("unpaid"),
             json.path("amount_total").isNumber() ? json.path("amount_total").longValue() : null,
             json.path("currency").asString(null), metadata.path("invoice_id").asString(null),
@@ -236,14 +240,4 @@ public class StripeProviderClient {
         return value == null || value.isBlank() ? fallback : value;
     }
 
-    public record StripeSession(
-        String id,
-        String url,
-        String paymentStatus,
-        Long amountTotal,
-        String currency,
-        String invoiceId,
-        String studentId
-    ) {
-    }
 }

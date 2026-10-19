@@ -20,7 +20,7 @@ import java.time.Duration;
 import java.util.Map;
 
 @Service
-public class BakongProviderClient {
+public class BakongProviderClient implements BakongGateway {
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
     private final String accountId;
@@ -58,7 +58,7 @@ public class BakongProviderClient {
         this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
     }
 
-    public GeneratedKhqr generate(BigDecimal amountUsd, String invoiceNumber) {
+    public BakongGateway.GeneratedKhqr generate(BigDecimal amountUsd, String invoiceNumber) {
         requireMerchantConfiguration();
         if (amountUsd == null || amountUsd.signum() <= 0) {
             throw new IllegalArgumentException("Invoice balance must be greater than zero to generate a KHQR.");
@@ -84,7 +84,7 @@ public class BakongProviderClient {
                 ? "KHQR generation failed." : response.getKHQRStatus().getMessage();
             throw new IllegalStateException(message == null || message.isBlank() ? "KHQR generation failed." : message);
         }
-        return new GeneratedKhqr(response.getData().getQr(), response.getData().getMd5(), amountKhr,
+        return new BakongGateway.GeneratedKhqr(response.getData().getQr(), response.getData().getMd5(), amountKhr,
             amountUsd.setScale(2, java.math.RoundingMode.HALF_UP), expiryMillis, true);
     }
 
@@ -94,11 +94,20 @@ public class BakongProviderClient {
         return Map.of("enabled", true, "result", post("/v1/check_bakong_account", Map.of("accountId", accountId)));
     }
 
-    public JsonNode checkTransactionByMd5(String md5) {
+    public BakongGateway.TransactionCheck checkTransactionByMd5(String md5) {
         if (!apiEnabled || apiToken.isBlank()) {
             throw new IllegalStateException("Bakong API is not enabled or not configured.");
         }
-        return post("/v1/check_transaction_by_md5", Map.of("md5", md5));
+        JsonNode response = post("/v1/check_transaction_by_md5", Map.of("md5", md5));
+        JsonNode transaction = response.path("data");
+        return new BakongGateway.TransactionCheck(
+            response.path("responseCode").asInt(-1),
+            decimal(transaction.path("amount")),
+            transaction.path("currency").asString("KHR"),
+            transaction.path("toAccountId").asString(""),
+            transaction.path("hash").asString(null),
+            transaction.path("receiptUrl").asString(null)
+        );
     }
 
     public BigDecimal khrPerUsd() {
@@ -152,13 +161,11 @@ public class BakongProviderClient {
         return value == null || value.length() <= length ? value : value.substring(0, length);
     }
 
-    public record GeneratedKhqr(
-        String qrString,
-        String md5,
-        BigDecimal amountKhr,
-        BigDecimal amountUsd,
-        long expirationTimestamp,
-        boolean verified
-    ) {
+    private static BigDecimal decimal(JsonNode value) {
+        try {
+            return new BigDecimal(value.asString());
+        } catch (NumberFormatException exception) {
+            return BigDecimal.ZERO;
+        }
     }
 }

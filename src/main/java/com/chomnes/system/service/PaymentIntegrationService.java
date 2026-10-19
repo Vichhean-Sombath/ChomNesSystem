@@ -28,8 +28,8 @@ import java.util.Map;
 @Service
 @Transactional
 public class PaymentIntegrationService {
-    private final StripeProviderClient stripe;
-    private final BakongProviderClient bakong;
+    private final StripeGateway stripe;
+    private final BakongGateway bakong;
     private final PaymentService payments;
     private final BakongQrRequestService qrRequests;
     private final InvoiceRepository invoices;
@@ -37,8 +37,8 @@ public class PaymentIntegrationService {
     private final StudentRepository students;
 
     public PaymentIntegrationService(
-        StripeProviderClient stripe,
-        BakongProviderClient bakong,
+        StripeGateway stripe,
+        BakongGateway bakong,
         PaymentService payments,
         BakongQrRequestService qrRequests,
         InvoiceRepository invoices,
@@ -74,7 +74,7 @@ public class PaymentIntegrationService {
         long amountCents = remaining.movePointRight(2).setScale(0, RoundingMode.HALF_UP).longValueExact();
         FeeStructure fee = fees.findById(invoice.getFeeId()).orElse(null);
         String feeName = fee == null ? "School fee" : fee.getFeeName();
-        StripeProviderClient.StripeSession session = stripe.createCheckoutSession(invoice.getInvoiceId(),
+        StripeGateway.StripeSession session = stripe.createCheckoutSession(invoice.getInvoiceId(),
             invoice.getStudentId(), invoice.getInvoiceNumber(), feeName, amountCents, successUrl, cancelUrl);
         if (session.id() == null || session.url() == null) {
             throw new IllegalStateException("Stripe did not return an active checkout session URL.");
@@ -84,12 +84,12 @@ public class PaymentIntegrationService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> stripeSuccess(String sessionId) {
-        StripeProviderClient.StripeSession session = stripe.retrieveCheckoutSession(sessionId);
+        StripeGateway.StripeSession session = stripe.retrieveCheckoutSession(sessionId);
         return object("session_id", session.id(), "status", session.paymentStatus(), "invoice_id", session.invoiceId());
     }
 
     public PaymentResponse verifyStripeCheckout(String sessionId, Integer requesterId, User.Role requesterRole) {
-        StripeProviderClient.StripeSession session = stripe.retrieveCheckoutSession(sessionId);
+        StripeGateway.StripeSession session = stripe.retrieveCheckoutSession(sessionId);
         if (session.id() == null || !"paid".equalsIgnoreCase(session.paymentStatus()) || session.amountTotal() == null
             || !"usd".equalsIgnoreCase(session.currency()) || session.invoiceId() == null) {
             throw new IllegalArgumentException("Payment not completed or invoice not found.");
@@ -105,11 +105,11 @@ public class PaymentIntegrationService {
     }
 
     public void handleStripeWebhook(byte[] rawBody, String signature) {
-        JsonNode event = stripe.verifyAndParseWebhook(rawBody, signature);
-        String type = event.path("type").asString("");
+        StripeGateway.StripeWebhookEvent event = stripe.verifyWebhook(rawBody, signature);
+        String type = event.type();
         if (!"checkout.session.completed".equals(type) && !"checkout.session.async_payment_succeeded".equals(type))
             return;
-        String sessionId = event.path("data").path("object").path("id").asString(null);
+        String sessionId = event.sessionId();
         if (sessionId != null) verifyStripeCheckout(sessionId, null, User.Role.Admin);
     }
 
@@ -118,7 +118,7 @@ public class PaymentIntegrationService {
         authorizeInvoiceOwner(invoice, requesterId, requesterRole);
         BigDecimal remaining = remainingBalance(invoice);
         if (remaining.signum() <= 0) throw new PaymentConflictException("This invoice is already fully paid.");
-        BakongProviderClient.GeneratedKhqr generated = bakong.generate(remaining, invoice.getInvoiceNumber());
+        BakongGateway.GeneratedKhqr generated = bakong.generate(remaining, invoice.getInvoiceNumber());
         if (generated.md5() == null || !generated.md5().matches("(?i)[a-f0-9]{32}")) {
             throw new IllegalStateException("KHQR generation did not return a valid MD5 transaction key.");
         }
@@ -160,11 +160,10 @@ public class PaymentIntegrationService {
         Integer paymentId = null;
         if ("Pending".equals(qr.getStatus())) {
             result = bakong.checkTransactionByMd5(md5);
-            JsonNode transaction = result.path("data");
-            if (result.path("responseCode").asInt(-1) == 0 && transaction.isObject()) {
-                String currency = transaction.path("currency").asString("KHR").toUpperCase();
-                BigDecimal rawAmount = decimal(transaction.path("amount"));
-                String receivedAccount = transaction.path("toAccountId").asString("");
+            if (result.responseCode() == 0) {
+                String currency = result.currency().toUpperCase();
+                BigDecimal rawAmount = result.amount();
+                String receivedAccount = result.toAccountId();
                 if (receivedAccount.isBlank() || !receivedAccount.equalsIgnoreCase(bakong.accountId())) {
                     throw new IllegalArgumentException("Bakong transaction was paid to a different merchant account.");
                 }
@@ -181,9 +180,9 @@ public class PaymentIntegrationService {
                     matched = false;
                 }
                 if (rawAmount.signum() > 0 && matched) {
-                    String transactionHash = transaction.path("hash").asString(md5);
+                    String transactionHash = result.hash() == null ? md5 : result.hash();
                     PaymentResponse saved = payments.recordGatewayPayment(qr.getInvoiceId(), amountUsd,
-                        "BakongKHQR", transactionHash, transaction.path("receiptUrl").asString(null));
+                        "BakongKHQR", transactionHash, result.receiptUrl());
                     paymentId = saved.paymentId();
                     qrRequests.markStatus(md5, "Paid");
                 } else if (rawAmount.signum() > 0) {
@@ -225,14 +224,6 @@ public class PaymentIntegrationService {
             return Integer.valueOf(value);
         } catch (NumberFormatException exception) {
             throw new IllegalArgumentException(message);
-        }
-    }
-
-    private BigDecimal decimal(JsonNode value) {
-        try {
-            return new BigDecimal(value.asString());
-        } catch (NumberFormatException exception) {
-            return BigDecimal.ZERO;
         }
     }
 
